@@ -1,0 +1,16 @@
+{
+    "name": "LiteFramework",
+    "rootNamespace": "",
+    "references": [
+        "GUID:c252822df358b454fbf82b21fbfebaed"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

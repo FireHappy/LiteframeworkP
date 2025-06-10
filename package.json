@@ -1,0 +1,11 @@
+{
+  "name": "com.liteframework.unity",
+  "displayName": "LiteFramework",
+  "version": "1.0.0",
+  "description": "A lite mvp framework",
+  "unity": "2020.3",
+  "author": {
+    "name": "chenlin",
+    "email": ""
+  }
+}

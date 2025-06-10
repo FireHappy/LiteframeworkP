@@ -1,0 +1,38 @@
+using LiteFramework.Core.Utility;
+using LiteFramework.Module.UI;
+using VContainer;
+
+namespace {NAMESPACE}
+{
+    [AutoRegister(VContainer.Lifetime.Transient)]
+    public class {UI_NAME}Presenter : BaseUIPresenter<{UI_NAME}View>
+    {
+
+        public {UI_NAME}Presenter(UIRouter router, IObjectResolver container) : base(router, container)
+        {
+
+        }
+
+        public override void OnViewCreate()
+        {
+
+        }
+
+        public override void OnViewShow()
+        {
+
+        }
+
+        public override void OnViewHide()
+        {
+
+        }
+
+        public override void OnViewDispose()
+        {
+
+        }
+    }
+}
+
+

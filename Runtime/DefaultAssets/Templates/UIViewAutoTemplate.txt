@@ -1,0 +1,17 @@
+using UnityEngine;
+using UnityEngine.UI;
+using LiteFramework.Module.UI;
+using TMPro;
+namespace {NAMESPACE}
+{
+    public partial class {UI_NAME}View : BaseUIView<{UI_NAME}Presenter>
+    {
+{Fields}
+        public override void FindComponents()
+        {
+{FieldsFind}
+        }
+    }
+}
+
+
