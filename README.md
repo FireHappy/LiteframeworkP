@@ -18,13 +18,13 @@
    ```json
    {
      "dependencies": {
-       "com.liteframework.unity": "https://github.com/FireHappy/LiteFramework.git?path=Packages/LiteFramework"
+        "com.liteframework.unity": "https://github.com/FireHappy/LiteframeworkP.git"
      }
    }
    ```
 
 2. 或者使用 Unity 的 UPM UI 手动添加 Git URL：  
-   `"com.liteframework.unity": "https://github.com/FireHappy/LiteFramework.git?path=Packages/LiteFramework"`
+   `"com.liteframework.unity": "https://github.com/FireHappy/LiteframeworkP.git"`
 
 3. 确保以下依赖存在：  
    - ✅ TextMeshPro（推荐）  
