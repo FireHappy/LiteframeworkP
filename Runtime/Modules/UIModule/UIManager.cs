@@ -29,7 +29,7 @@ namespace LiteFramework.Module.UI
             pool.Init(config.UIKeepAliveTime);
         }
 
-        public void OpenUI<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null)
+        public TPresenter OpenUI<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null)
         where TPresenter : BaseUIPresenter<TView>
         where TView : BaseUIView<TPresenter>
         {
@@ -51,6 +51,7 @@ namespace LiteFramework.Module.UI
                     parent ??= GetUIParent();
                     break;
             }
+            var presenter = container.Resolve<TPresenter>();
             var viewObj = UIUtility.FindUI<TView>(parent);
             if (viewObj != null)
             {
@@ -68,10 +69,10 @@ namespace LiteFramework.Module.UI
                 TView view = UIUtility.CreateUI<TView>(parent, config.UIPath);
                 //查找初始化组件
                 view.FindComponents();
-                var presenter = container.Resolve<TPresenter>();
                 view.BindPresenter(presenter);
                 view.OnCreate();
             }
+            return presenter;
         }
 
         public void CloseUI<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null)
@@ -108,11 +109,12 @@ namespace LiteFramework.Module.UI
         }
 
 
-        public void OpenUIAsync<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
+        public TPresenter OpenUIAsync<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
                    where TPresenter : BaseUIPresenter<TView>
                    where TView : BaseUIView<TPresenter>
         {
             //todo 实现UI的异步加载
+            return default;
         }
 
         public void CloseUIAsync<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
