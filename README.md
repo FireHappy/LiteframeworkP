@@ -121,7 +121,6 @@ public class Main : LiteStartupBase
 ```
 
 将以上脚本挂在场景相机上，或根节点的 GameObject 上。  
-![alt text](image.png)
 
 ---
 
