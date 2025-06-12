@@ -1,6 +1,6 @@
 using UnityEditor;
 using UnityEngine;
-using LiteFramework.Configs;
+using LiteFramework.Module;
 using System.IO;
 
 public static class UIConfigCreator

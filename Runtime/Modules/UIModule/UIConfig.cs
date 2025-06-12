@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace LiteFramework.Configs
+namespace LiteFramework.Module
 {
     public class UIConfig : ScriptableObject
     {

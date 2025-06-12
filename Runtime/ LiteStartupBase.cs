@@ -3,7 +3,7 @@ using VContainer;
 using VContainer.Unity;
 using LiteFramework.Module.UI;
 using LiteFramework.Core.MVP;
-using LiteFramework.Configs;
+using LiteFramework.Module;
 using System.Linq;
 using System.Reflection;
 using LiteFramework.Core.Utility;
