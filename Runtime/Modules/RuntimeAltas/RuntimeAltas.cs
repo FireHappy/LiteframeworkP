@@ -85,7 +85,7 @@ namespace LiteFramework.Module
             // 检查纹理尺寸是否超过图集大小
             if (width + 2 * padding > atlasSize || height + 2 * padding > atlasSize)
             {
-                Debug.LogError($"Texture size {width}x{height} exceeds atlas capacity with padding");
+                Debug.LogWarning($"Texture size {width}x{height} exceeds atlas capacity with padding");
                 return false;
             }
 
@@ -120,6 +120,14 @@ namespace LiteFramework.Module
                     $"Atlas is full! Cannot add {w}x{h} texture. " +
                     $"Current usage: {UsedWidth}x{UsedHeight}/{atlasSize}x{atlasSize} pixels ({Efficiency:F1}% efficient)"
                 );
+            }
+
+            // 判断当前行是否放的下新加的图片
+            if (currentX + padding + w > atlasSize)
+            {
+                currentX = 0;
+                currentY += rowHeight + padding;
+                rowHeight = 0;
             }
 
             int xPos = currentX;
