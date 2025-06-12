@@ -30,7 +30,6 @@ namespace LiteFramework.Module
             padding = pad;
             blitMaterial = blitMat;
 
-            // 检查是否可以直接blit
             useDirectBlit = SystemInfo.copyTextureSupport != CopyTextureSupport.None;
 
             Debug.Log($"Atlas initialized: {size}x{size}, padding: {padding}");
@@ -43,7 +42,6 @@ namespace LiteFramework.Module
             };
             atlasRT.Create();
 
-            // 创建用于格式转换的材质
             CreateConversionMaterial();
             CreateDrawMaterial();
 
@@ -52,7 +50,6 @@ namespace LiteFramework.Module
 
         private void CreateConversionMaterial()
         {
-            // 创建一个简单的copy shader，支持基本的格式转换
             Shader copyShader = Shader.Find("Hidden/TextureCopy");
             if (copyShader == null)
             {
@@ -65,24 +62,25 @@ namespace LiteFramework.Module
 
         private void CreateDrawMaterial()
         {
-            // 创建一个用于绘制纹理的材质
-            Shader shader = Shader.Find("Hidden/BlitCopy");
-            if (shader == null)
+            // 创建专门用于透明纹理绘制的材质
+            Shader drawShader = Shader.Find("Custom/DrawWithoutBlend");
+            if (drawShader == null)
             {
-                Debug.LogWarning("Could not find Hidden/BlitCopy shader, falling back to UI/Default");
-                shader = Shader.Find("UI/Default");
+                Debug.LogWarning("Could not find Custom/DrawWithoutBlend shader, falling back to UI/Default");
+                drawShader = Shader.Find("UI/Default");
             }
 
-            drawMaterial = new Material(shader);
+            drawMaterial = new Material(drawShader);
             drawMaterial.hideFlags = HideFlags.HideAndDontSave;
+
+            // 确保材质设置为不混合模式，直接覆盖像素
+            drawMaterial.SetInt("_SrcBlend", (int)BlendMode.One);
+            drawMaterial.SetInt("_DstBlend", (int)BlendMode.Zero);
+            drawMaterial.SetInt("_ZWrite", 1);
         }
 
-        /// <summary>
-        /// 检查图集是否有足够空间容纳指定尺寸的纹理
-        /// </summary>
         public bool HasSpace(int width, int height)
         {
-            // 检查纹理尺寸是否超过图集大小
             if (width + 2 * padding > atlasSize || height + 2 * padding > atlasSize)
             {
                 Debug.LogWarning($"Texture size {width}x{height} exceeds atlas capacity with padding");
@@ -113,7 +111,6 @@ namespace LiteFramework.Module
             int w = texture.width;
             int h = texture.height;
 
-            // 严格检查空间是否足够
             if (!HasSpace(w, h))
             {
                 throw new InvalidOperationException(
@@ -122,7 +119,6 @@ namespace LiteFramework.Module
                 );
             }
 
-            // 判断当前行是否放的下新加的图片
             if (currentX + padding + w > atlasSize)
             {
                 currentX = 0;
@@ -133,7 +129,7 @@ namespace LiteFramework.Module
             int xPos = currentX;
             int yPos = currentY;
 
-            // 优化的纹理复制方法
+            // 使用专门的透明纹理处理方法
             BlitTextureToPosition(texture, xPos, yPos);
 
             // 计算UV坐标（已修正Y轴翻转）
@@ -151,11 +147,9 @@ namespace LiteFramework.Module
                 pixelRect = new Rect(xPos, yPos, w, h)
             };
 
-            // 更新下一个纹理的位置
             currentX += w + padding;
             rowHeight = Mathf.Max(rowHeight, h);
 
-            // 如果当前行放不下下一个纹理，则换行
             if (currentX + padding > atlasSize)
             {
                 currentX = 0;
@@ -171,109 +165,84 @@ namespace LiteFramework.Module
             int w = sourceTexture.width;
             int h = sourceTexture.height;
 
-            // 尝试直接复制纹理
-            if (useDirectBlit && CanUseCopyTexture(sourceTexture))
+            // 对于透明纹理，避免使用CopyTexture，因为它可能不正确处理透明度
+            bool isTransparent = HasTransparency(sourceTexture);
+
+            if (useDirectBlit && !isTransparent && CanUseCopyTexture(sourceTexture))
             {
                 try
                 {
-                    // 使用CopyTexture进行直接像素复制
                     Graphics.CopyTexture(sourceTexture, 0, 0, 0, 0, w, h, atlasRT, 0, 0, destX, destY);
                     return;
                 }
                 catch (Exception e)
                 {
-                    // 如果出错，回退到blit方法
                     Debug.LogWarning($"Failed to use CopyTexture: {e.Message}. Falling back to blit method.");
                     useDirectBlit = false;
                 }
             }
 
-            // 如果不能直接复制，使用blit方法
+            // 使用专门的透明纹理绘制方法
+            BlitWithProperBlending(sourceTexture, destX, destY, w, h);
+        }
+
+        private void BlitWithProperBlending(Texture sourceTexture, int destX, int destY, int width, int height)
+        {
             RenderTexture previousActive = RenderTexture.active;
-            RenderTexture temp = null;
 
             try
             {
-                // 检查是否需要格式转换
-                bool needsConversion = NeedsFormatConversion(sourceTexture);
+                RenderTexture.active = atlasRT;
 
-                if (blitMaterial != null || sourceTexture is RenderTexture || needsConversion)
-                {
-                    // 需要材质处理、源是RenderTexture或需要格式转换时使用临时RT
-                    temp = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32);
+                // 设置正确的渲染状态
+                GL.PushMatrix();
+                GL.LoadPixelMatrix(0, atlasSize, atlasSize, 0);
 
-                    // 设置临时RT的过滤模式与源纹理匹配
-                    temp.filterMode = sourceTexture.filterMode;
+                // 禁用混合，直接覆盖像素
+                GL.Begin(GL.QUADS);
 
-                    // 第一步：将源纹理复制到临时RT
-                    RenderTexture.active = temp;
+                // 设置材质属性
+                drawMaterial.mainTexture = sourceTexture;
+                drawMaterial.SetPass(0);
 
-                    Material materialToUse = blitMaterial;
+                // 绘制四边形，确保UV坐标正确
+                GL.TexCoord2(0, 0); GL.Vertex3(destX, destY + height, 0);         // 左上
+                GL.TexCoord2(1, 0); GL.Vertex3(destX + width, destY + height, 0); // 右上
+                GL.TexCoord2(1, 1); GL.Vertex3(destX + width, destY, 0);          // 右下
+                GL.TexCoord2(0, 1); GL.Vertex3(destX, destY, 0);                  // 左下
 
-                    // 如果需要格式转换且没有提供材质，使用默认转换材质
-                    if (needsConversion && blitMaterial == null)
-                    {
-                        materialToUse = conversionMaterial;
-                    }
-
-                    if (materialToUse != null)
-                    {
-                        Graphics.Blit(sourceTexture, temp, materialToUse);
-                    }
-                    else
-                    {
-                        Graphics.Blit(sourceTexture, temp);
-                    }
-
-                    // 第二步：将临时RT的内容复制到图集的指定位置
-                    RenderTexture.active = atlasRT;
-                    DrawTextureAtPosition(temp, destX, destY, w, h);
-                }
-                else
-                {
-                    // 直接从Texture2D blit到RenderTexture的指定位置
-                    RenderTexture.active = atlasRT;
-                    DrawTextureAtPosition(sourceTexture, destX, destY, w, h);
-                }
+                GL.End();
+                GL.PopMatrix();
             }
             finally
             {
                 RenderTexture.active = previousActive;
-                if (temp != null)
-                {
-                    RenderTexture.ReleaseTemporary(temp);
-                }
             }
         }
 
-        private void DrawTextureAtPosition(Texture texture, int destX, int destY, int width, int height)
+        private bool HasTransparency(Texture texture)
         {
-            // 使用预创建的材质，避免重复创建
-            drawMaterial.mainTexture = texture;
+            // 检查纹理是否包含透明度信息
+            if (texture is Texture2D tex2D)
+            {
+                TextureFormat format = tex2D.format;
+                switch (format)
+                {
+                    case TextureFormat.RGBA32:
+                    case TextureFormat.ARGB32:
+                    case TextureFormat.RGBA4444:
+                    case TextureFormat.ARGB4444:
+                    case TextureFormat.Alpha8:
+                    case TextureFormat.DXT5:
+                    case TextureFormat.BC7:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
 
-            // 开始绘制
-            drawMaterial.SetPass(0);
-
-            GL.PushMatrix();
-            GL.LoadPixelMatrix(0, atlasSize, atlasSize, 0);
-
-            // 绘制四边形（修正UV坐标顺序）
-            GL.Begin(GL.QUADS);
-            // 左下 (0,1)
-            GL.TexCoord2(0, 1);
-            GL.Vertex3(destX, destY, 0);
-            // 右下 (1,1)
-            GL.TexCoord2(1, 1);
-            GL.Vertex3(destX + width, destY, 0);
-            // 右上 (1,0)
-            GL.TexCoord2(1, 0);
-            GL.Vertex3(destX + width, destY + height, 0);
-            // 左上 (0,0)
-            GL.TexCoord2(0, 0);
-            GL.Vertex3(destX, destY + height, 0);
-            GL.End();
-
-            GL.PopMatrix();
+            // RenderTexture默认可能包含透明度
+            return texture is RenderTexture;
         }
 
         private bool CanUseCopyTexture(Texture sourceTexture)
@@ -299,28 +268,6 @@ namespace LiteFramework.Module
                 default:
                     // 其他格式可能不兼容，需要转换
                     return false;
-            }
-        }
-
-        private bool NeedsFormatConversion(Texture sourceTexture)
-        {
-            if (!(sourceTexture is Texture2D))
-                return true;
-
-            Texture2D sourceTex2D = sourceTexture as Texture2D;
-            TextureFormat sourceFormat = sourceTex2D.format;
-
-            // 检查是否需要转换为ARGB32
-            switch (sourceFormat)
-            {
-                case TextureFormat.ARGB32:
-                    return false; // 已经是ARGB32
-                case TextureFormat.RGBA32:
-                case TextureFormat.RGB24:
-                    return false; // 可以直接复制或简单转换
-                default:
-                    // 其他格式需要转换
-                    return true;
             }
         }
 
