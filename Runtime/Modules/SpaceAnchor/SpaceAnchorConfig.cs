@@ -17,7 +17,7 @@ namespace LiteFramework.Module
     }
 
 
-    [CreateAssetMenu(fileName = "SpaceAnchorConfig", menuName = "XR/SpaceAnchor Config")]
+    [CreateAssetMenu(fileName = "SpaceAnchorConfig", menuName = "LiteFramework/SpaceAnchor Config")]
     public class SpaceAnchorConfig : ScriptableObject
     {
         public List<SpaceAnchorInfo> Anchors = new List<SpaceAnchorInfo>();

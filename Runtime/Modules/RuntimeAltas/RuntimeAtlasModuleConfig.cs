@@ -21,8 +21,6 @@ namespace LiteFramework.Module
         public RuntimeAtlasConfig config;
     }
 
-
-    [CreateAssetMenu(fileName = "RuntimeAtlasConfig", menuName = "LiteFramework/RuntimeAltasConfig")]
     public class RuntimeAtlasModuleConfig : ScriptableObject
     {
         public List<RuntimeAtlasModuleEntry> modules = new();
