@@ -127,7 +127,7 @@ public class Main : LiteStartupBase
 ## 🪛 第七步：配置 UIRoot
 
 1. 在 Unity 中右键创建配置文件：  
-   `Create > LiteFramework > UI Root Config`
+   `Create > LiteFramework > UI Config`
 
 2. 可选配置项：
    - UI 加载路径
