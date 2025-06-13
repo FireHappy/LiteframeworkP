@@ -381,12 +381,7 @@ namespace LiteFramework.Module
 
                 case PackingAlgorithm.Linear:
                 default:
-
-                    // 原始线性检查
-                    if (currentX + paddedWidth <= atlasSize)
-                        return true;
-                    int newY = currentY + rowHeight + padding;
-                    return newY + paddedHeight <= atlasSize;
+                    return FindLinearPosition(paddedWidth, paddedHeight).x >= 0;
             }
         }
 
