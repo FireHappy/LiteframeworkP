@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Codice.Client.GameUI.Explorer;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -12,7 +11,7 @@ namespace LiteFramework.Module
         Linear,         // 原始线性布局
         BestFit,        // 最佳适应算法
         SkyLine,        // 天际线算法
-        MaxRects        // 最大矩形算法（推荐）
+        MaxRects        // 最大矩形算法
     }
 
     public class RuntimeAtlas : IDisposable
@@ -39,14 +38,13 @@ namespace LiteFramework.Module
         public int UsedPixels => usedRects.Sum(r => (int)(r.width * r.height));
         public float Efficiency => (float)UsedPixels / (atlasSize * atlasSize) * 100f;
 
-        public RuntimeAtlas(int size, Material blitMat, int pad = 1, PackingAlgorithm algorithm = PackingAlgorithm.SkyLine)
+        public RuntimeAtlas(int size, int pad = 1, PackingAlgorithm algorithm = PackingAlgorithm.SkyLine)
         {
             if (size <= 0 || pad < 0)
                 throw new ArgumentException("Atlas size and padding must be positive values");
 
             atlasSize = size;
             padding = pad;
-            blitMaterial = blitMat;
             packingAlgorithm = algorithm;
 
             useDirectBlit = SystemInfo.copyTextureSupport != CopyTextureSupport.None;
@@ -385,6 +383,21 @@ namespace LiteFramework.Module
             }
         }
 
+
+        public bool TryAddTexture(Texture texture, out AtlasResult result)
+        {
+            try
+            {
+                result = AddTexture(texture);
+            }
+            catch
+            {
+                result = default;
+                return false;
+            }
+            return true;
+        }
+
         public AtlasResult AddTexture(Texture texture)
         {
             if (texture == null)
@@ -472,7 +485,7 @@ namespace LiteFramework.Module
             return rect;
         }
 
-        // 保持原有的其他方法不变...
+
         private void CreateConversionMaterial()
         {
             Shader copyShader = Shader.Find("Hidden/TextureCopy");
@@ -482,6 +495,7 @@ namespace LiteFramework.Module
                 copyShader = Shader.Find("UI/Default");
             }
             conversionMaterial = new Material(copyShader);
+            conversionMaterial.hideFlags = HideFlags.HideAndDontSave;
         }
 
         private void CreateDrawMaterial()
@@ -492,12 +506,20 @@ namespace LiteFramework.Module
                 Debug.LogWarning("Could not find Custom/DrawWithoutBlend shader, falling back to UI/Default");
                 drawShader = Shader.Find("UI/Default");
             }
-
             drawMaterial = new Material(drawShader);
             drawMaterial.hideFlags = HideFlags.HideAndDontSave;
-            drawMaterial.SetInt("_SrcBlend", (int)BlendMode.One);
-            drawMaterial.SetInt("_DstBlend", (int)BlendMode.Zero);
-            drawMaterial.SetInt("_ZWrite", 1);
+        }
+
+        private void CreateBlitMaterial()
+        {
+            Shader blitShader = Shader.Find("Hidden/TextureBlit");
+            if (blitShader == null)
+            {
+                Debug.LogWarning("Could not findHidden/TextureBlit shader, falling back to UI/Default");
+                blitShader = Shader.Find("UI/Default");
+            }
+            blitMaterial = new Material(blitShader);
+            blitMaterial.hideFlags = HideFlags.HideAndDontSave;
         }
 
         private void BlitTextureToPosition(Texture sourceTexture, int destX, int destY)

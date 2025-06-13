@@ -49,15 +49,19 @@ namespace LiteFramework.Module
             if (group.textureCache.TryGetValue(texture, out var cached))
                 return cached;
 
-            RuntimeAtlas atlas = group.atlases.Find(a => a.HasSpace(texture.width, texture.height));
-            if (atlas == null)
+            AtlasResult result;
+            foreach (var item in group.atlases)
             {
-                //如果图集空间了扩容一个新的图集处理
-                atlas = new RuntimeAtlas(group.config.atlasSize, group.config.blitMaterial, group.config.padding);
-                group.atlases.Add(atlas);
+                if (item.TryAddTexture(texture, out result))
+                {
+                    group.textureCache[texture] = result;
+                    return result;
+                }
             }
-
-            var result = atlas.AddTexture(texture);
+            //如果图集空间了扩容一个新的图集处理
+            var altas = new RuntimeAtlas(group.config.atlasSize, group.config.padding, group.config.packingAlgorithm);
+            result = altas.AddTexture(texture);
+            group.atlases.Add(altas);
             group.textureCache[texture] = result;
             return result;
         }

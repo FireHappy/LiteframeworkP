@@ -9,9 +9,9 @@ namespace LiteFramework.Module
     [System.Serializable]
     public class RuntimeAtlasConfig
     {
-        public Material blitMaterial;
         public int atlasSize = 2048;
         public int padding = 2;
+        public PackingAlgorithm packingAlgorithm = PackingAlgorithm.SkyLine;
     }
 
     [System.Serializable]
