@@ -337,62 +337,6 @@ namespace LiteFramework.Module
         #endregion
 
 
-        public bool TryGetPosition(int width, int height, out Rect position)
-        {
-            int paddedW = width + 2 * padding;
-            int paddedH = height + 2 * padding;
-
-            if (paddedW > atlasSize || paddedH > atlasSize)
-            {
-                position = new Rect(-1, -1, 0, 0);
-                return false;
-            }
-
-            switch (packingAlgorithm)
-            {
-                case PackingAlgorithm.MaxRects:
-                    position = FindMaxRectsPosition(paddedW, paddedH);
-                    break;
-                case PackingAlgorithm.SkyLine:
-                    position = FindSkyLinePosition(paddedW, paddedH);
-                    break;
-                case PackingAlgorithm.BestFit:
-                    position = FindBestFitPosition(paddedW, paddedH);
-                    break;
-                case PackingAlgorithm.Linear:
-                default:
-                    position = FindLinearPosition(paddedW, paddedH);
-                    break;
-            }
-
-            return position.x >= 0;
-        }
-        public bool HasSpace(int width, int height)
-        {
-            if (width + 2 * padding > atlasSize || height + 2 * padding > atlasSize)
-                return false;
-
-            int paddedWidth = width + 2 * padding;
-            int paddedHeight = height + 2 * padding;
-
-            switch (packingAlgorithm)
-            {
-                case PackingAlgorithm.MaxRects:
-                    return FindMaxRectsPosition(paddedWidth, paddedHeight).x >= 0;
-
-                case PackingAlgorithm.SkyLine:
-                    return FindSkyLinePosition(paddedWidth, paddedHeight).x >= 0;
-
-                case PackingAlgorithm.BestFit:
-                    return FindBestFitPosition(paddedWidth, paddedHeight).x >= 0;
-
-                case PackingAlgorithm.Linear:
-                default:
-                    return FindLinearPosition(paddedWidth, paddedHeight).x >= 0;
-            }
-        }
-
-
         public bool TryAddTexture(Texture texture, out AtlasResult result)
         {
             try
