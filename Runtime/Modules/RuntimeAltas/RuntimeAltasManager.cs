@@ -59,7 +59,7 @@ namespace LiteFramework.Module
                 }
             }
             //如果图集空间了扩容一个新的图集处理
-            var altas = new RuntimeAtlas(group.config.atlasSize, group.config.padding, group.config.packingAlgorithm);
+            var altas = new RuntimeAtlas(group.config.atlasSize, group.config.padding, group.config.packingAlgorithm, group.config.blitMaterial);
             result = altas.AddTexture(texture);
             group.atlases.Add(altas);
             group.textureCache[texture] = result;
@@ -82,6 +82,10 @@ namespace LiteFramework.Module
             {
                 if (moduleAtlasMap.TryGetValue(moduleKey, out var group))
                 {
+                    foreach (var item in group.atlases)
+                    {
+                        item.Dispose();
+                    }
                     group.atlases.Clear();
                     group.textureCache.Clear();
                 }
@@ -90,6 +94,10 @@ namespace LiteFramework.Module
             {
                 foreach (var group in moduleAtlasMap.Values)
                 {
+                    foreach (var item in group.atlases)
+                    {
+                        item.Dispose();
+                    }
                     group.atlases.Clear();
                     group.textureCache.Clear();
                 }

@@ -14,15 +14,15 @@ namespace LiteFramework.Module
         MaxRects        // 最大矩形算法
     }
 
-    public class RuntimeAtlas : IDisposable
+    public class RuntimeAtlas
     {
         private RenderTexture atlasRT;
-        private Material blitMaterial;
         private Material conversionMaterial;
         private Material drawMaterial;
         private int atlasSize, padding;
         private bool isDisposed = false;
         private bool useDirectBlit = true;
+        private bool forceUseBlit = false;
 
         // 布局算法相关
         private PackingAlgorithm packingAlgorithm = PackingAlgorithm.MaxRects;
@@ -38,7 +38,8 @@ namespace LiteFramework.Module
         public int UsedPixels => usedRects.Sum(r => (int)(r.width * r.height));
         public float Efficiency => (float)UsedPixels / (atlasSize * atlasSize) * 100f;
 
-        public RuntimeAtlas(int size, int pad = 1, PackingAlgorithm algorithm = PackingAlgorithm.SkyLine)
+
+        public RuntimeAtlas(int size, int pad = 1, PackingAlgorithm algorithm = PackingAlgorithm.SkyLine, Material blitMaterial = null)
         {
             if (size <= 0 || pad < 0)
                 throw new ArgumentException("Atlas size and padding must be positive values");
@@ -60,7 +61,15 @@ namespace LiteFramework.Module
             atlasRT.Create();
 
             CreateConversionMaterial();
-            CreateDrawMaterial();
+            if (blitMaterial == null)
+            {
+                CreateDrawMaterial();
+            }
+            else
+            {
+                drawMaterial = blitMaterial;
+                forceUseBlit = true;
+            }
             InitializeAlgorithm();
         }
 
@@ -510,17 +519,6 @@ namespace LiteFramework.Module
             drawMaterial.hideFlags = HideFlags.HideAndDontSave;
         }
 
-        private void CreateBlitMaterial()
-        {
-            Shader blitShader = Shader.Find("Hidden/TextureBlit");
-            if (blitShader == null)
-            {
-                Debug.LogWarning("Could not findHidden/TextureBlit shader, falling back to UI/Default");
-                blitShader = Shader.Find("UI/Default");
-            }
-            blitMaterial = new Material(blitShader);
-            blitMaterial.hideFlags = HideFlags.HideAndDontSave;
-        }
 
         private void BlitTextureToPosition(Texture sourceTexture, int destX, int destY)
         {
@@ -528,7 +526,7 @@ namespace LiteFramework.Module
             int h = sourceTexture.height;
             bool isTransparent = HasTransparency(sourceTexture);
 
-            if (useDirectBlit && !isTransparent && CanUseCopyTexture(sourceTexture))
+            if (!forceUseBlit && useDirectBlit && !isTransparent && CanUseCopyTexture(sourceTexture))
             {
                 try
                 {
@@ -653,19 +651,14 @@ namespace LiteFramework.Module
                     atlasRT = null;
                 }
 
-                if (blitMaterial != null && blitMaterial.name.Contains("(Instance)"))
-                {
-                    UnityEngine.Object.DestroyImmediate(blitMaterial);
-                    blitMaterial = null;
-                }
-
                 if (conversionMaterial != null)
                 {
                     UnityEngine.Object.DestroyImmediate(conversionMaterial);
                     conversionMaterial = null;
                 }
 
-                if (drawMaterial != null)
+                //排除配置表调用的
+                if (!forceUseBlit && drawMaterial != null)
                 {
                     UnityEngine.Object.DestroyImmediate(drawMaterial);
                     drawMaterial = null;
@@ -675,10 +668,6 @@ namespace LiteFramework.Module
             }
         }
 
-        ~RuntimeAtlas()
-        {
-            Dispose();
-        }
     }
 
     public struct AtlasResult
