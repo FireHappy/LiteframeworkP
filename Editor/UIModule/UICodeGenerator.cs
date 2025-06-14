@@ -5,7 +5,7 @@ using System.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using LiteFramework.Configs;
+using LiteFramework.Module;
 using LiteFramework.EditorTools;
 
 namespace LiteFramework.EditorTools

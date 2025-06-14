@@ -3,7 +3,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using LiteFramework.Configs;
+using LiteFramework.Module;
 
 namespace LiteFramework.EditorTools
 {

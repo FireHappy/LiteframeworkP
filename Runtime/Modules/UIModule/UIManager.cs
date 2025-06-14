@@ -1,7 +1,7 @@
 using UnityEngine;
 using VContainer;
 using System;
-using LiteFramework.Configs;
+using LiteFramework.Module;
 
 namespace LiteFramework.Module.UI
 {
