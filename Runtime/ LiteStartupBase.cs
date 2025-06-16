@@ -23,6 +23,7 @@ namespace LiteFramework
             RegisterUIModule(builder);
             RegisterAllAutoRegister(builder);
             OnRegisterCustomServices(builder);
+            GlobalContainer.SetContainer(Container);
         }
 
         /// <summary>
