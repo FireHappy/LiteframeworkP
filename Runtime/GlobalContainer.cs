@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using VContainer;
 
 namespace LiteFramework
@@ -7,18 +8,24 @@ namespace LiteFramework
     /// </summary>
     public static class GlobalContainer
     {
-        private static IObjectResolver _resolver;
+        private static IObjectResolver container;
 
         public static void SetContainer(IObjectResolver resolver)
         {
-            _resolver = resolver;
+            UnityEngine.Debug.Log($"GlobalContainer setContainer resolver:{resolver}");
+            GlobalContainer.container = resolver;
         }
 
         public static T Resolve<T>() where T : class
         {
-            return _resolver?.Resolve<T>();
+            if (isReady)
+            {
+                return GlobalContainer.container?.Resolve<T>();
+            }
+            UnityEngine.Debug.Log("GlobalContainer container is null please set container");
+            return default;
         }
 
-        public static bool IsReady => _resolver != null;
+        public static bool isReady => GlobalContainer.container != null;
     }
 }

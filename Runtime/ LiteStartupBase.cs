@@ -21,7 +21,12 @@ namespace LiteFramework
             RegisterAllConfiguredModules(builder);
             RegisterAllAutoRegister(builder);
             OnRegisterCustomServices(builder);
-            GlobalContainer.SetContainer(Container);
+        }
+
+        protected override void OnSetContainer(IObjectResolver container)
+        {
+            base.OnSetContainer(container);
+            GlobalContainer.SetContainer(container);
         }
 
         /// <summary>
