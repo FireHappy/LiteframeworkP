@@ -32,7 +32,7 @@ namespace LiteFramework.EditorTools
                 return;
             }
 
-            GenerateCodeFiles(go, uiName, config);
+            GenerateCodeFiles(go, uiName, config, false);
 
             // 延迟生成路由，避免编译期间类型未加载
             EditorPrefs.SetBool("LiteFramework.PendingRouterGeneration", true);
@@ -43,11 +43,37 @@ namespace LiteFramework.EditorTools
             EditorUtility.DisplayDialog("Generate success!", $"Generate {uiName} MVP code success.\nRouter will be generated after domain reload.", "Sure");
         }
 
-        private static void GenerateCodeFiles(GameObject go, string uiName, UIGeneratorConfig config)
+
+        [MenuItem("Assets/Generate UI MVP Template With Model")]
+        private static void GenerateUIMVPWithModel()
+        {
+            var go = Selection.activeObject as GameObject;
+            string uiName = go.name.Replace("View", "");
+
+            var config = LoadUIGeneratorConfig();
+            if (config == null)
+            {
+                Debug.LogError("Can't Find UIGeneratorConfig");
+                return;
+            }
+
+            GenerateCodeFiles(go, uiName, config, true);
+
+            // 延迟生成路由，避免编译期间类型未加载
+            EditorPrefs.SetBool("LiteFramework.PendingRouterGeneration", true);
+            EditorPrefs.SetString("LiteFramework.RouterOutputPath", config.outputRootPath);
+
+            AssetDatabase.Refresh();
+
+            EditorUtility.DisplayDialog("Generate success!", $"Generate {uiName} MVP code success.\nRouter will be generated after domain reload.", "Sure");
+        }
+
+        private static void GenerateCodeFiles(GameObject go, string uiName, UIGeneratorConfig config, bool generateModel)
         {
             string viewTemplate = File.ReadAllText("Packages/com.liteframework.unity/Runtime/DefaultAssets/Templates/UIViewTemplate.txt");
             string viewAutoTemplate = File.ReadAllText("Packages/com.liteframework.unity/Runtime/DefaultAssets/Templates/UIViewAutoTemplate.txt");
             string presenterTemplate = File.ReadAllText("Packages/com.liteframework.unity/Runtime/DefaultAssets/Templates/UIPresenterTemplate.txt");
+
 
             var (fields, fieldsFind) = GenerateComponentFields(go.transform, config);
             var nameSpace = config.nameSpace;
@@ -66,6 +92,18 @@ namespace LiteFramework.EditorTools
                 .Replace("{UI_NAME}", uiName)
                 .Replace("{NAMESPACE}", nameSpace);
 
+            if (generateModel)
+            {
+                string content = "public void Init({UI_NAME}Model model)\r\t\t{\r\r\t\t}";
+                content = content.Replace("{UI_NAME}", uiName);
+                presenterCode = presenterCode.Replace("{INIT}", content);
+            }
+            else
+            {
+                presenterCode = presenterCode.Replace("{INIT}", "");
+            }
+
+
             string outputDir = Path.Combine(config.outputRootPath, uiName);
             Directory.CreateDirectory(outputDir);
 
@@ -81,6 +119,20 @@ namespace LiteFramework.EditorTools
             if (!File.Exists(presenterFile))
             {
                 File.WriteAllText(presenterFile, presenterCode);
+            }
+
+
+            if (generateModel)
+            {
+                string modelTemplate = File.ReadAllText("Packages/com.liteframework.unity/Runtime/DefaultAssets/Templates/UIModelTemplate.txt");
+                string modelCode = modelTemplate
+                .Replace("{UI_NAME}", uiName)
+                .Replace("{NAMESPACE}", nameSpace);
+                var modelFile = Path.Combine(outputDir, $"{uiName}Model.cs");
+                if (!File.Exists(modelFile))
+                {
+                    File.WriteAllText(modelFile, modelCode);
+                }
             }
         }
 
