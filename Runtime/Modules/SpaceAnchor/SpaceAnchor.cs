@@ -3,26 +3,21 @@ using UnityEngine;
 namespace LiteFramework.Module
 {
 
-    public class SpaceAnchor : MonoBehaviour, IAnchorCreate, IAnchorDispose, IAnchorShow, IAnchorHide
+    public class SpaceAnchor
     {
-        public void OnAnchorCreate()
+        public string AnchorId { get; }
+        public SpaceAnchorInfo Info { get; }
+        public GameObject Root { get; }
+
+        public Transform UIContainer => string.IsNullOrEmpty(Info?.UIContainerPath)
+            ? Root.transform
+            : Root.transform.Find(Info.UIContainerPath);
+
+        public SpaceAnchor(string anchorId, SpaceAnchorInfo info, GameObject root)
         {
-
-        }
-
-        public void OnAnchorDispose()
-        {
-
-        }
-
-        public void OnAnchorHide()
-        {
-
-        }
-
-        public void OnAnchorShow()
-        {
-
+            AnchorId = anchorId;
+            Info = info;
+            Root = root;
         }
     }
 }
