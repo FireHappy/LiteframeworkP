@@ -414,6 +414,7 @@ namespace LiteFramework.Module
             return new AtlasResult
             {
                 texture = atlasRT,
+                oriTexture = texture,
                 uv = uv,
                 pixelRect = new Rect(xPos, yPos, w, h)
             };
@@ -617,6 +618,7 @@ namespace LiteFramework.Module
     public struct AtlasResult
     {
         public Texture texture;
+        public Texture oriTexture;
         public Rect uv;
         public Rect pixelRect;
 

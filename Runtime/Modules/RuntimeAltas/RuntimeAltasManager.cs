@@ -38,10 +38,27 @@ namespace LiteFramework.Module
             }
         }
 
+        public bool TryGetTexture(string moduleKey, string uniqueKey, out AtlasResult result)
+        {
+            result = default;
+            if (!moduleAtlasMap.TryGetValue(moduleKey, out var group))
+            {
+                Debug.LogError($"[RuntimeAtlasManager] Module '{moduleKey}' not registered.");
+                return false;
+            }
+            if (!string.IsNullOrEmpty(uniqueKey) && group.uniqueKeyCache.TryGetValue(uniqueKey, out var resultUniqueKey))
+            {
+                result = resultUniqueKey;
+                return true;
+            }
+            return false;
+        }
+
         public AtlasResult AddTexture(string moduleKey, Texture texture)
         {
             return AddTexture(moduleKey, texture, null);
         }
+
 
         public AtlasResult AddTexture(string moduleKey, Texture texture, string uniqueKey)
         {
@@ -52,10 +69,10 @@ namespace LiteFramework.Module
             }
 
             // 优先检查路径缓存
-            if (!string.IsNullOrEmpty(uniqueKey) && group.uniqueKeyCache.TryGetValue(uniqueKey, out var resultFromPath))
+            if (!string.IsNullOrEmpty(uniqueKey) && group.uniqueKeyCache.TryGetValue(uniqueKey, out var resultUniqueKey))
             {
                 // Debug.Log("[RuntimeAtlasManager] Get Texture From uniqueKey cached");
-                return resultFromPath;
+                return resultUniqueKey;
             }
 
             // 检查 texture 实例缓存
