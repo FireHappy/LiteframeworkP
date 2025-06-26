@@ -50,21 +50,13 @@ namespace LiteFramework
         }
 
         /// <summary>
-        /// 自动注册带特性类（可选）
+        /// 自动注册带注册
         /// </summary>
         private void RegisterAllAutoRegister(IContainerBuilder builder)
         {
-            var assemblies = GetAutoRegisterAssemblies();
-            VContainerAutoRegister.RegisterWithAttribute(builder, assemblies);
+            VContainerAutoRegister.Register(builder);
         }
 
-        /// <summary>
-        /// 默认注册程序集（可重写）
-        /// </summary>
-        protected virtual Assembly[] GetAutoRegisterAssemblies()
-        {
-            return new[] { Assembly.Load("Assembly-CSharp") };
-        }
 
         /// <summary>
         /// 可选自定义服务注册

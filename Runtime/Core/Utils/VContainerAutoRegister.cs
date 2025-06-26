@@ -1,23 +1,35 @@
+using System;
+using System.Collections.Generic;
 using System.Reflection;
 using VContainer;
 
 namespace LiteFramework.Core.Utility
 {
-    public static class VContainerAutoRegister
+    public static partial class VContainerAutoRegister
     {
-        public static void RegisterWithAttribute(IContainerBuilder builder, Assembly[] assemblies)
+        public static Dictionary<Type, Lifetime> registerDict = new Dictionary<Type, Lifetime>();
+
+        public static void Register(IContainerBuilder builder)
         {
-            foreach (var assembly in assemblies)
+#if !UNITY_EDITOR
+            Assembly assembly = Assembly.Load("Assembly-CSharp");
+            foreach (var type in assembly.GetTypes())
             {
-                foreach (var type in assembly.GetTypes())
+                var attr = type.GetCustomAttribute<AutoRegisterAttribute>();
+                if (attr != null && !type.IsAbstract)
                 {
-                    var attr = type.GetCustomAttribute<AutoRegisterAttribute>();
-                    if (attr != null && !type.IsAbstract)
-                    {
-                        builder.Register(type, attr.Lifetime);
-                    }
+                    builder.Register(type, attr.Lifetime);
                 }
             }
+#else
+            UnityEngine.Debug.Log("[VContainerAutoRegister] Use Generate Code Register");
+            foreach (KeyValuePair<Type, Lifetime> kv in registerDict)
+            {
+                UnityEngine.Debug.Log($"VContainerAutoRegister Register key:{kv.Key}, value:{kv.Value}");
+                builder.Register(kv.Key, kv.Value);
+            }
+            registerDict.Clear();
+#endif
         }
     }
 }
