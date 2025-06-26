@@ -11,7 +11,7 @@ namespace LiteFramework.Core.Utility
 
         public static void Register(IContainerBuilder builder)
         {
-#if UNITY_EDITOR
+#if !UNITY_EDITOR
             Assembly assembly = Assembly.Load("Assembly-CSharp");
             foreach (var type in assembly.GetTypes())
             {
