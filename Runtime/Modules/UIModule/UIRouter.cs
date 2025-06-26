@@ -59,14 +59,14 @@ namespace LiteFramework.Module.UI
             action(uiManager, type, parent);
         }
 
-        public TPresenter Open<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null)
+        public TPresenter Open<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
             where TPresenter : BaseUIPresenter<TView>
             where TView : BaseUIView<TPresenter>
         {
             return uiManager.OpenUI<TPresenter, TView>(type, parent);
         }
 
-        public void Close<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null)
+        public void Close<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
             where TPresenter : BaseUIPresenter<TView>
             where TView : BaseUIView<TPresenter>
         {
