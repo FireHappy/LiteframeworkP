@@ -33,31 +33,32 @@ namespace LiteFramework.Module.UI
         where TPresenter : BaseUIPresenter<TView>
         where TView : BaseUIView<TPresenter>
         {
-            switch (type)
-            {
-                case UIType.Panel:
-                    parent ??= GetUIParent();
-                    var lastUI = GetTopChild(parent);
-                    if (lastUI != null)
-                    {
-                        lastUI.GetComponent<IUILifetime>().OnHide();
-                        UIUtility.SetUIVisible(lastUI.gameObject, false);
-                    }
-                    break;
-                case UIType.Dialog:
-                    parent ??= GetDialogParent();
-                    break;
-                case UIType.Item:
-                    parent ??= GetUIParent();
-                    break;
-            }
+            // 1. 获取 parent
+            parent ??= GetDefaultParent(type);
+
+            // 2. 隐藏上一个 UI（只对 Panel 有效）
+            if (type == UIType.Panel)
+                HideLastUI(parent);
+
+            // 3. 创建 Presenter
             var presenter = container.Resolve<TPresenter>();
-            presenter.UIType = type; presenter.UIParent = parent;
+            presenter.UIType = type;
+            presenter.UIParent = parent;
+
+            // 4. Item 类型不走缓存或复用，直接创建并绑定
+            if (type == UIType.Item)
+            {
+                CreateAndBindView<TView, TPresenter>(presenter, parent);
+                return presenter;
+            }
+
+            // 5. 查找已有 UI（先找已挂载，再找对象池）
             var viewObj = UIUtility.FindUI<TView>(parent);
+
             if (viewObj != null)
             {
                 viewObj.SetAsLastSibling();
-                viewObj.gameObject.SetActive(true);
+                UIUtility.SetUIVisible(viewObj.gameObject, true);
             }
             else if (pool.TryGetFromPool<TView>(out viewObj))
             {
@@ -67,36 +68,65 @@ namespace LiteFramework.Module.UI
             }
             else
             {
-                TView view = UIUtility.CreateUI<TView>(parent, config.UIPath);
-                //Find initialize component 
-                view.FindComponents();
-                view.BindPresenter(presenter);
-                view.OnCreate();
+                CreateAndBindView<TView, TPresenter>(presenter, parent);
             }
+
             return presenter;
         }
+
+        private Transform GetDefaultParent(UIType type)
+        {
+            return type switch
+            {
+                UIType.Panel => GetUIParent(),
+                UIType.Dialog => GetDialogParent(),
+                UIType.Item => GetUIParent(),
+                _ => GetUIParent(),
+            };
+        }
+
+        private void HideLastUI(Transform parent)
+        {
+            var lastUI = GetTopChild(parent);
+            if (lastUI != null && lastUI.TryGetComponent<IUILifetime>(out var life))
+            {
+                life.OnHide();
+                UIUtility.SetUIVisible(lastUI.gameObject, false);
+            }
+        }
+
+        private TView CreateAndBindView<TView, TPresenter>(TPresenter presenter, Transform parent)
+            where TPresenter : BaseUIPresenter<TView>
+            where TView : BaseUIView<TPresenter>
+        {
+            TView view = UIUtility.CreateUI<TView>(parent, config.UIPath);
+            view.FindComponents();
+            view.BindPresenter(presenter);
+            view.OnCreate();
+            return view;
+        }
+
 
         public void CloseUI<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
         where TPresenter : BaseUIPresenter<TView>
         where TView : BaseUIView<TPresenter>
         {
-            switch (type)
+            parent ??= GetDefaultParent(type);
+            var view = UIUtility.FindUI<TView>(parent);
+            if (view != null)
             {
-                case UIType.Panel:
-                    parent ??= GetUIParent();
-                    break;
-                case UIType.Dialog:
-                    parent ??= GetDialogParent();
-                    break;
-                case UIType.Item:
-                    parent ??= GetUIParent();
-                    break;
-            }
-            var tsf = UIUtility.FindUI<TView>(parent);
-            if (tsf != null)
-            {
-                //Recycle UI To Pool
-                pool.RecycleUI<TView>(tsf);
+                if (type == UIType.Item)
+                {
+                    view.GetComponent<IUILifetime>().OnDispose();
+                    view.GetComponent<TView>().UnBindPresenter();
+                    UIUtility.DestroyUI(view);
+                    return;
+                }
+                else
+                {
+                    //Recycle UI To Pool
+                    pool.RecycleUI<TView>(view);
+                }
             }
             if (type == UIType.Panel)
             {
