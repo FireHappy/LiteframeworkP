@@ -64,6 +64,11 @@ namespace LiteFramework.Module.UI
             {
                 viewObj.SetParent(parent);
                 viewObj.localPosition = Vector3.zero;
+                IUILifetime[] lifetimes = viewObj.GetComponentsInChildren<IUILifetime>();
+                for (int i = 0; i < lifetimes.Length; i++)
+                {
+                    lifetimes[i].OnShow();
+                }
                 UIUtility.SetUIVisible(viewObj.gameObject, true);
             }
             else
