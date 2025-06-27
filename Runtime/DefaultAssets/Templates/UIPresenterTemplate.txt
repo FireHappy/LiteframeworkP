@@ -4,7 +4,7 @@ using VContainer;
 
 namespace {NAMESPACE}
 {
-    [AutoRegister(VContainer.Lifetime.Transient)]
+    [AutoRegister(VContainer.Lifetime.Scoped)]
     public class {UI_NAME}Presenter : BaseUIPresenter<{UI_NAME}View>
     {
 

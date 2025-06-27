@@ -56,8 +56,8 @@ namespace LiteFramework.Module.UI
                 Type key = removeQueue.Dequeue();
                 if (uiPool.TryGetValue(key, out UIPoolEntry entry))
                 {
-                    entry.IView.UnBindPresenter();
                     entry.ILifeTime.OnDispose();
+                    entry.IView.UnBindPresenter();
                     UIUtility.DestroyUI(entry.View);
                     uiPool.Remove(key);
                 }
