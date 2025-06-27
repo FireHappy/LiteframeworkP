@@ -20,7 +20,6 @@ namespace LiteFramework.Module.UI
         private Transform uiParent;
         private Transform dialogParent;
 
-        private List<IUIContainer> uiContainers = new List<IUIContainer>();
 
         public UIManager(IObjectResolver container, UIConfig config, UIPoolManager pool)
         {
