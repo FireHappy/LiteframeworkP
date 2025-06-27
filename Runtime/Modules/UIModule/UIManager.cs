@@ -117,7 +117,11 @@ namespace LiteFramework.Module.UI
             {
                 if (type == UIType.Item)
                 {
-                    view.GetComponent<IUILifetime>().OnDispose();
+                    IUILifetime[] lifetimes = view.GetComponentsInChildren<IUILifetime>();
+                    for (int i = 0; i < lifetimes.Length; i++)
+                    {
+                        lifetimes[i].OnDispose();
+                    }
                     view.GetComponent<TView>().UnBindPresenter();
                     UIUtility.DestroyUI(view);
                     return;
@@ -133,7 +137,11 @@ namespace LiteFramework.Module.UI
                 var lastUI = GetTopChild(parent);
                 if (lastUI != null)
                 {
-                    lastUI.GetComponent<IUILifetime>().OnShow();
+                    IUILifetime[] lifetimes = lastUI.GetComponentsInChildren<IUILifetime>();
+                    for (int i = 0; i < lifetimes.Length; i++)
+                    {
+                        lifetimes[i].OnShow();
+                    }
                     UIUtility.SetUIVisible(lastUI.gameObject, true);
                 }
             }
