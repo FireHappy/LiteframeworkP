@@ -8,32 +8,32 @@ namespace LiteFramework.Tests
 {
     public class DummyUIManager : IUIManager
     {
-        public TPresenter OpenUI<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null)
-            where TPresenter : BaseUIPresenter<TView>
+        public void CloseUI<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
             where TView : BaseUIView<TPresenter>
+            where TPresenter : BaseUIPresenter<TView>
+        {
+
+        }
+
+        public void CloseUIAsync<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
+            where TView : BaseUIView<TPresenter>
+            where TPresenter : BaseUIPresenter<TView>
+        {
+
+        }
+
+        public TPresenter OpenUI<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
+            where TView : BaseUIView<TPresenter>
+            where TPresenter : BaseUIPresenter<TView>
         {
             return default;
         }
 
-        public void CloseUI<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null)
-            where TPresenter : BaseUIPresenter<TView>
+        public TPresenter OpenUIAsync<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
             where TView : BaseUIView<TPresenter>
-        {
-
-        }
-
-        public TPresenter OpenUIAsync<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
             where TPresenter : BaseUIPresenter<TView>
-            where TView : BaseUIView<TPresenter>
         {
             return default;
-        }
-
-        public void CloseUIAsync<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
-            where TPresenter : BaseUIPresenter<TView>
-            where TView : BaseUIView<TPresenter>
-        {
-
         }
     }
 }

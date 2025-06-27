@@ -44,7 +44,7 @@ namespace LiteFramework.Tests
             sw.Start();
             for (int i = 0; i < TestIterations; i++)
             {
-                manager.OpenUI<DummyPresenter, DummyView>();
+                manager.OpenUI<DummyView, DummyPresenter>();
             }
             sw.Stop();
             UnityEngine.Debug.Log($"Static Invoke : {sw.ElapsedMilliseconds} ms");

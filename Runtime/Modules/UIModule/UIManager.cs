@@ -1,7 +1,7 @@
 using UnityEngine;
 using VContainer;
 using System;
-using LiteFramework.Module;
+using System.Collections.Generic;
 
 namespace LiteFramework.Module.UI
 {
@@ -14,12 +14,13 @@ namespace LiteFramework.Module.UI
 
     public class UIManager : IUIManager
     {
-
         private readonly IObjectResolver container;
         private readonly UIConfig config;
         private readonly UIPoolManager pool;
         private Transform uiParent;
         private Transform dialogParent;
+
+        private List<IUIContainer> uiContainers = new List<IUIContainer>();
 
         public UIManager(IObjectResolver container, UIConfig config, UIPoolManager pool)
         {
@@ -29,7 +30,7 @@ namespace LiteFramework.Module.UI
             pool.Init(config.UIKeepAliveTime);
         }
 
-        public TPresenter OpenUI<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null)
+        public TPresenter OpenUI<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
         where TPresenter : BaseUIPresenter<TView>
         where TView : BaseUIView<TPresenter>
         {
@@ -52,6 +53,7 @@ namespace LiteFramework.Module.UI
                     break;
             }
             var presenter = container.Resolve<TPresenter>();
+            presenter.UIType = type; presenter.UIParent = parent;
             var viewObj = UIUtility.FindUI<TView>(parent);
             if (viewObj != null)
             {
@@ -67,7 +69,7 @@ namespace LiteFramework.Module.UI
             else
             {
                 TView view = UIUtility.CreateUI<TView>(parent, config.UIPath);
-                //查找初始化组件
+                //Find initialize component 
                 view.FindComponents();
                 view.BindPresenter(presenter);
                 view.OnCreate();
@@ -75,7 +77,7 @@ namespace LiteFramework.Module.UI
             return presenter;
         }
 
-        public void CloseUI<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null)
+        public void CloseUI<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
         where TPresenter : BaseUIPresenter<TView>
         where TView : BaseUIView<TPresenter>
         {
@@ -94,7 +96,7 @@ namespace LiteFramework.Module.UI
             var tsf = UIUtility.FindUI<TView>(parent);
             if (tsf != null)
             {
-                //回收到UI池中
+                //Recycle UI To Pool
                 pool.RecycleUI<TView>(tsf);
             }
             if (type == UIType.Panel)
@@ -109,7 +111,7 @@ namespace LiteFramework.Module.UI
         }
 
 
-        public TPresenter OpenUIAsync<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
+        public TPresenter OpenUIAsync<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
                    where TPresenter : BaseUIPresenter<TView>
                    where TView : BaseUIView<TPresenter>
         {
@@ -117,7 +119,7 @@ namespace LiteFramework.Module.UI
             return default;
         }
 
-        public void CloseUIAsync<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
+        public void CloseUIAsync<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
             where TPresenter : BaseUIPresenter<TView>
             where TView : BaseUIView<TPresenter>
         {

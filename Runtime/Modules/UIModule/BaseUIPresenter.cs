@@ -1,4 +1,5 @@
 using LiteFramework.Core.MVP;
+using UnityEngine;
 using VContainer;
 
 namespace LiteFramework.Module.UI
@@ -9,6 +10,31 @@ namespace LiteFramework.Module.UI
         protected TView view;
         protected readonly IObjectResolver container;
         protected readonly UIRouter router;
+        private UIType uiType = UIType.Panel;
+        public UIType UIType
+        {
+            get
+            {
+                return uiType;
+            }
+            set
+            {
+                uiType = value;
+            }
+        }
+
+        private Transform uiParent;
+        public Transform UIParent
+        {
+            get
+            {
+                return uiParent;
+            }
+            set
+            {
+                uiParent = value;
+            }
+        }
 
         protected BaseUIPresenter(UIRouter router, IObjectResolver container)
         {
@@ -30,6 +56,11 @@ namespace LiteFramework.Module.UI
         public virtual void OnViewShow() { }
         public virtual void OnViewHide() { }
         public virtual void OnViewDispose() { }
+
+        public void Close()
+        {
+            router.Close<TView>(UIType, UIParent);
+        }
     }
 }
 
