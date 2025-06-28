@@ -106,15 +106,7 @@ namespace LiteFramework.Module.UI
             TView view = UIUtility.CreateUI<TView>(parent, config.UIPath);
             view.FindComponents();
             view.BindPresenter(presenter);
-            IUILifetime[] lifetimes = view.GetComponentsInChildren<IUILifetime>();
-            for (int i = 0; i < lifetimes.Length; i++)
-            {
-                lifetimes[i].OnCreate();
-            }
-            for (int i = 0; i < lifetimes.Length; i++)
-            {
-                lifetimes[i].OnShow();
-            }
+            view.OnCreate();
             return view;
         }
 
