@@ -115,26 +115,16 @@ namespace LiteFramework.Module.UI
         where TPresenter : BaseUIPresenter<TView>
         where TView : BaseUIView<TPresenter>
         {
+            if (type == UIType.Item)
+            {
+                return;
+            }
             parent ??= GetDefaultParent(type);
             var view = UIUtility.FindUI<TView>(parent);
             if (view != null)
             {
-                if (type == UIType.Item)
-                {
-                    IUILifetime[] lifetimes = view.GetComponentsInChildren<IUILifetime>();
-                    for (int i = 0; i < lifetimes.Length; i++)
-                    {
-                        lifetimes[i].OnDispose();
-                    }
-                    view.GetComponent<TView>().UnBindPresenter();
-                    UIUtility.DestroyUI(view);
-                    return;
-                }
-                else
-                {
-                    //Recycle UI To Pool
-                    pool.RecycleUI<TView>(view);
-                }
+                //Recycle UI To Pool
+                pool.RecycleUI<TView>(view);
             }
             if (type == UIType.Panel)
             {

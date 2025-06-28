@@ -11,6 +11,7 @@ namespace LiteFramework.Module.UI
         protected readonly IObjectResolver container;
         protected readonly UIRouter router;
         private UIType uiType = UIType.Panel;
+        private GameObject viewObj;
         public UIType UIType
         {
             get
@@ -45,6 +46,7 @@ namespace LiteFramework.Module.UI
         public void AttachView(IView view)
         {
             this.view = (TView)view;
+            this.viewObj = view.obj;
         }
 
         public void DetachView()
@@ -59,6 +61,22 @@ namespace LiteFramework.Module.UI
 
         public void Close()
         {
+            if (uiType == UIType.Item)
+            {
+                //TODO 处理item的销毁
+                // IUILifetime[] lifetimes = viewObj.GetComponentsInChildren<IUILifetime>();
+                // for (int i = 0; i < lifetimes.Length; i++)
+                // {
+                //     lifetimes[i].OnHide();
+                // }
+                // for (int i = 0; i < lifetimes.Length; i++)
+                // {
+                //     lifetimes[i].OnDispose();
+                // }
+                // viewObj.GetComponent<TView>().UnBindPresenter();
+                GameObject.Destroy(viewObj);
+                return;
+            }
             router.Close<TView>(UIType, UIParent);
         }
     }

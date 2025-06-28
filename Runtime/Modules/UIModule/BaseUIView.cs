@@ -8,6 +8,8 @@ namespace LiteFramework.Module.UI
     {
         public TPresenter presenter { get; private set; }
 
+        public GameObject obj => gameObject;
+
         public void BindPresenter(IPresenter presenter)
         {
             if (this.presenter != null)
