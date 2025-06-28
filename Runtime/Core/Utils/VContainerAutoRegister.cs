@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using VContainer;
+using VContainer.Unity;
 
 namespace LiteFramework.Core.Utility
 {
@@ -25,7 +26,6 @@ namespace LiteFramework.Core.Utility
             UnityEngine.Debug.Log("[VContainerAutoRegister] Use Generate Code Register");
             foreach (KeyValuePair<Type, Lifetime> kv in registerDict)
             {
-                UnityEngine.Debug.Log($"VContainerAutoRegister Register key:{kv.Key}, value:{kv.Value}");
                 builder.Register(kv.Key, kv.Value);
             }
             registerDict.Clear();
