@@ -58,6 +58,10 @@ namespace LiteFramework.Module.UI
                 {
                     for (int i = 0; i < entry.ILifeTimes.Length; i++)
                     {
+                        entry.ILifeTimes[i].OnHide();
+                    }
+                    for (int i = 0; i < entry.ILifeTimes.Length; i++)
+                    {
                         entry.ILifeTimes[i].OnDispose();
                     }
                     for (int i = 0; i < entry.IViews.Length; i++)
