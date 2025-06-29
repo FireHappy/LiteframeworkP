@@ -85,44 +85,19 @@ namespace LiteFramework.Module.UI
         where TPresenter : BaseUIPresenter<TView>, new()
         where TView : BaseUIView<TPresenter>
         {
-            if (type == UIType.Item)
+            var presenter = new TPresenter()
             {
-                // ✅ 1. 手动构建，不走 Scope
-                var presenter = new TPresenter();
-                presenter.UIType = type;
-                presenter.UIParent = parent;
+                UIType = type,
+                UIParent = parent
+            };
+            container.Inject(presenter);
 
-                var view = UIUtility.CreateUI<TView>(parent, config.UIPath);
-                container.Inject(presenter); // 可选：如果你需要注入服务/数据
+            var view = UIUtility.CreateUI<TView>(parent, config.UIPath);
+            view.FindComponents();
+            view.BindPresenter(presenter);
+            view.OnCreate();
 
-                view.FindComponents();
-                view.BindPresenter(presenter);
-                view.OnCreate();
-
-                return presenter;
-            }
-            else
-            {
-                // ✅ 原有 Panel/Dialog 逻辑：使用 Scoped Scope + 自动注入
-                var scope = container.CreateScope(builder =>
-                {
-                    builder.Register<TPresenter>(Lifetime.Scoped);
-                });
-
-                var presenter = scope.Resolve<TPresenter>();
-                presenter.Scope = scope;
-                presenter.UIType = type;
-                presenter.UIParent = parent;
-
-                var view = UIUtility.CreateUI<TView>(parent, config.UIPath);
-                scope.InjectGameObject(view.gameObject);
-
-                view.FindComponents();
-                view.BindPresenter(presenter);
-                view.OnCreate();
-
-                return presenter;
-            }
+            return presenter;
         }
 
         public void CloseUI<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)

@@ -10,10 +10,6 @@ namespace LiteFramework.Tests
     public class DummyPresenter : BaseUIPresenter<DummyView>
     {
         public DummyPresenter() { }
-        public DummyPresenter(UIRouter uiRouter, IObjectResolver container) : base(uiRouter, container)
-        {
-
-        }
 
         public override void OnViewCreate()
         {

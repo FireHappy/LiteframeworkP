@@ -1,3 +1,4 @@
+using System;
 using LiteFramework.Core.MVP;
 using UnityEngine;
 using VContainer;
@@ -7,10 +8,11 @@ namespace LiteFramework.Module.UI
     public abstract class BaseUIPresenter<TView> : IPresenter
         where TView : IView
     {
-        protected TView view;
+        [Inject]
         protected readonly IObjectResolver container;
-
+        [Inject]
         protected readonly UIRouter router;
+        protected TView view;
         private GameObject viewObj;
         private UIType uiType = UIType.Panel;
 
@@ -23,19 +25,6 @@ namespace LiteFramework.Module.UI
             set
             {
                 uiType = value;
-            }
-        }
-
-        private IScopedObjectResolver scope;
-        public IScopedObjectResolver Scope
-        {
-            get
-            {
-                return scope;
-            }
-            set
-            {
-                scope = value;
             }
         }
 
@@ -53,13 +42,8 @@ namespace LiteFramework.Module.UI
         }
         public BaseUIPresenter()
         {
-        }
-        protected BaseUIPresenter(UIRouter router, IObjectResolver container)
-        {
-            this.container = container;
-            this.router = router;
-        }
 
+        }
         public void AttachView(IView view)
         {
             this.view = (TView)view;
@@ -74,10 +58,7 @@ namespace LiteFramework.Module.UI
         public virtual void OnViewCreate() { }
         public virtual void OnViewShow() { }
         public virtual void OnViewHide() { }
-        public virtual void OnViewDispose()
-        {
-            scope?.Dispose();
-        }
+        public virtual void OnViewDispose() { }
 
         public void Close()
         {

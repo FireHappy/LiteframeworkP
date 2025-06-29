@@ -1,3 +1,4 @@
+using System;
 using LiteFramework.Core.MVP;
 using UnityEngine;
 
@@ -31,6 +32,9 @@ namespace LiteFramework.Module.UI
         public void UnBindPresenter()
         {
             presenter.DetachView();
+
+            if (presenter is IDisposable disposable)
+                disposable.Dispose();
             presenter = default;
         }
 
@@ -43,6 +47,7 @@ namespace LiteFramework.Module.UI
         public abstract void OnHide();
 
         public abstract void OnDispose();
+
     }
 }
 
