@@ -40,10 +40,7 @@ namespace LiteFramework.Module.UI
                 uiParent = value;
             }
         }
-        public BaseUIPresenter()
-        {
 
-        }
         public void AttachView(IView view)
         {
             this.view = (TView)view;
