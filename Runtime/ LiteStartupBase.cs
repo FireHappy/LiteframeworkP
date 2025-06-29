@@ -19,7 +19,7 @@ namespace LiteFramework
         protected override void Configure(IContainerBuilder builder)
         {
             RegisterAllConfiguredModules(builder);
-            RegisterAllAutoRegister(builder);
+            // RegisterAllAutoRegister(builder);
             OnRegisterCustomServices(builder);
         }
 

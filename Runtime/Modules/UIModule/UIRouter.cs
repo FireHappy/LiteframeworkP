@@ -22,7 +22,7 @@ namespace LiteFramework.Module.UI
 
 
         public static void Register<TPresenter, TView>()
-            where TPresenter : BaseUIPresenter<TView>
+            where TPresenter : BaseUIPresenter<TView>, new()
             where TView : BaseUIView<TPresenter>
         {
             // 使用强类型委托避免反射,使用泛型的特点，避免字典查找
@@ -61,7 +61,7 @@ namespace LiteFramework.Module.UI
         }
 
         public TPresenter Open<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
-            where TPresenter : BaseUIPresenter<TView>
+            where TPresenter : BaseUIPresenter<TView>, new()
             where TView : BaseUIView<TPresenter>
         {
             return uiManager.OpenUI<TView, TPresenter>(type, parent);

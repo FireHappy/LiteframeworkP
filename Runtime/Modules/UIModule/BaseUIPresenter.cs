@@ -9,9 +9,11 @@ namespace LiteFramework.Module.UI
     {
         protected TView view;
         protected readonly IObjectResolver container;
+
         protected readonly UIRouter router;
-        private UIType uiType = UIType.Panel;
         private GameObject viewObj;
+        private UIType uiType = UIType.Panel;
+
         public UIType UIType
         {
             get
@@ -21,6 +23,19 @@ namespace LiteFramework.Module.UI
             set
             {
                 uiType = value;
+            }
+        }
+
+        private IScopedObjectResolver scope;
+        public IScopedObjectResolver Scope
+        {
+            get
+            {
+                return scope;
+            }
+            set
+            {
+                scope = value;
             }
         }
 
@@ -36,7 +51,9 @@ namespace LiteFramework.Module.UI
                 uiParent = value;
             }
         }
-
+        public BaseUIPresenter()
+        {
+        }
         protected BaseUIPresenter(UIRouter router, IObjectResolver container)
         {
             this.container = container;
@@ -57,23 +74,21 @@ namespace LiteFramework.Module.UI
         public virtual void OnViewCreate() { }
         public virtual void OnViewShow() { }
         public virtual void OnViewHide() { }
-        public virtual void OnViewDispose() { }
+        public virtual void OnViewDispose()
+        {
+            scope?.Dispose();
+        }
 
         public void Close()
         {
             if (uiType == UIType.Item)
             {
-                //TODO 处理item的销毁
-                // IUILifetime[] lifetimes = viewObj.GetComponentsInChildren<IUILifetime>();
-                // for (int i = 0; i < lifetimes.Length; i++)
-                // {
-                //     lifetimes[i].OnHide();
-                // }
-                // for (int i = 0; i < lifetimes.Length; i++)
-                // {
-                //     lifetimes[i].OnDispose();
-                // }
-                // viewObj.GetComponent<TView>().UnBindPresenter();
+                UIUtility.TriggerLifetime(viewObj.transform, lifetime =>
+                {
+                    lifetime.OnHide();
+                    lifetime.OnDispose();
+                });
+                viewObj.GetComponent<TView>().UnBindPresenter();
                 GameObject.Destroy(viewObj);
                 return;
             }

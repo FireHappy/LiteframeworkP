@@ -1,6 +1,6 @@
 using UnityEngine;
 using VContainer;
-using System;
+using VContainer.Unity;
 
 namespace LiteFramework.Module.UI
 {
@@ -11,199 +11,133 @@ namespace LiteFramework.Module.UI
         Dialog
     }
 
-    // UI实例包装器，统一管理 View 和 Presenter 的生命周期
-    public class UIInstance<TView, TPresenter> : IDisposable
-        where TPresenter : BaseUIPresenter<TView>
-        where TView : BaseUIView<TPresenter>
-    {
-        public TView View { get; private set; }
-        public TPresenter Presenter { get; private set; }
-        public LifetimeScope Scope { get; private set; } // 新增：作用域引用
-        public UIType UIType { get; private set; }
-        public bool IsActive { get; private set; }
-
-        public UIInstance(TView view, TPresenter presenter, LifetimeScope scope, UIType uiType)
-        {
-            View = view;
-            Presenter = presenter;
-            Scope = scope; // 存储作用域引用
-            UIType = uiType;
-            IsActive = true;
-        }
-
-        public void Show()
-        {
-            if (!IsActive) return;
-
-            UIUtility.SetUIVisible(View.gameObject, true);
-            View.gameObject.transform.SetAsLastSibling();
-
-            // 触发生命周期
-            var lifetimes = View.GetComponentsInChildren<IUILifetime>();
-            foreach (var lifetime in lifetimes)
-            {
-                lifetime.OnShow();
-            }
-        }
-
-        public void Hide()
-        {
-            if (!IsActive) return;
-
-            UIUtility.SetUIVisible(View.gameObject, false);
-
-            // 触发生命周期
-            if (View.TryGetComponent<IUILifetime>(out var lifetime))
-            {
-                lifetime.OnHide();
-            }
-        }
-
-        public void Dispose()
-        {
-            if (!IsActive) return;
-
-            IsActive = false;
-
-            // 解除绑定
-            View?.UnBindPresenter();
-
-            // 释放作用域（关键修改）
-            Scope?.Dispose();
-            Scope = null;
-
-            // 销毁 View GameObject
-            if (View != null && View.gameObject != null)
-            {
-                UnityEngine.Object.Destroy(View.gameObject);
-            }
-
-            View = null;
-            Presenter = null;
-        }
-    }
-
-    // UI工厂
-    public interface IUIFactory
-    {
-        UIInstance<TView, TPresenter> CreateUI<TView, TPresenter>(UIType type, Transform parent)
-            where TPresenter : BaseUIPresenter<TView>
-            where TView : BaseUIView<TPresenter>;
-    }
-
-    public class UIFactory : IUIFactory
-    {
-        private readonly IObjectResolver container;
-        private readonly UIConfig config;
-
-        public UIFactory(IObjectResolver container, UIConfig config)
-        {
-            this.container = container;
-            this.config = config;
-        }
-
-        public UIInstance<TView, TPresenter> CreateUI<TView, TPresenter>(UIType type, Transform parent)
-            where TPresenter : BaseUIPresenter<TView>
-            where TView : BaseUIView<TPresenter>
-        {
-            // 1. 创建作用域（关键修改）
-            var scope = container.CreateScope(builder =>
-            {
-                // 注册Presenter到子作用域
-                builder.Register<TPresenter>(Lifetime.Scoped);
-            });
-
-            // 2. 从作用域解析Presenter
-            var presenter = scope.Container.Resolve<TPresenter>();
-            presenter.UIType = type;
-            presenter.UIParent = parent;
-
-            // 3. 创建 View
-            var view = UIUtility.CreateUI<TView>(parent, config.UIPath);
-
-            // 4. 注入依赖到View（关键修改）
-            scope.Container.InjectGameObject(view.gameObject);
-
-            // 5. 绑定关系
-            view.FindComponents();
-            view.BindPresenter(presenter);
-            view.OnCreate();
-
-            // 6. 存储作用域引用到Presenter（可选）
-            presenter.SetScope(scope);
-
-            // 7. 返回 UI 实例（传入作用域）
-            return new UIInstance<TView, TPresenter>(view, presenter, scope, type);
-        }
-    }
-
-
-
     public class UIManager : IUIManager
     {
-        private readonly IObjectResolver container;
         private readonly UIConfig config;
         private readonly UIPoolManager pool;
+        private readonly IObjectResolver container;
+
         private Transform uiParent;
         private Transform dialogParent;
 
 
-        public UIManager(IObjectResolver container, UIConfig config, UIPoolManager pool)
+        public UIManager(UIConfig config, UIPoolManager pool, IObjectResolver container)
         {
-            this.container = container;
             this.config = config;
             this.pool = pool;
+            this.container = container;
             pool.Init(config.UIKeepAliveTime);
         }
 
         public TPresenter OpenUI<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
-        where TPresenter : BaseUIPresenter<TView>
+        where TPresenter : BaseUIPresenter<TView>, new()
         where TView : BaseUIView<TPresenter>
         {
             // 1. 获取 parent
             parent ??= GetDefaultParent(type);
 
-            // 2. 隐藏上一个 UI（只对 Panel 有效）
+            // 2. Item 类型不走缓存或复用，直接创建并绑定
+            if (type == UIType.Item)
+            {
+                return CreateUI<TView, TPresenter>(type, parent);
+            }
+
+            // 3. 隐藏上一个 UI（只对 Panel 有效）
             if (type == UIType.Panel)
                 HideLastUI(parent);
 
-            // 3. 创建 Presenter
-            var presenter = container.Resolve<TPresenter>();
-            presenter.UIType = type;
-            presenter.UIParent = parent;
-
-            // 4. Item 类型不走缓存或复用，直接创建并绑定
-            if (type == UIType.Item)
-            {
-                CreateAndBindView<TView, TPresenter>(presenter, parent);
-                return presenter;
-            }
-
-            // 5. 查找已有 UI（先找已挂载，再找对象池）
+            // 4. 查找已有 UI（先找已挂载，再找对象池）
             var viewObj = UIUtility.FindUI<TView>(parent);
-
             if (viewObj != null)
             {
                 viewObj.SetAsLastSibling();
+                UIUtility.TriggerLifetime(viewObj, lifetime => { lifetime.OnShow(); });
                 UIUtility.SetUIVisible(viewObj.gameObject, true);
+                return viewObj.GetComponent<TView>().presenter;
             }
             else if (pool.TryGetFromPool<TView>(out viewObj))
             {
                 viewObj.SetParent(parent);
                 viewObj.localPosition = Vector3.zero;
-                IUILifetime[] lifetimes = viewObj.GetComponentsInChildren<IUILifetime>();
-                for (int i = 0; i < lifetimes.Length; i++)
-                {
-                    lifetimes[i].OnShow();
-                }
+                UIUtility.TriggerLifetime(viewObj, lifetime => { lifetime.OnShow(); });
                 UIUtility.SetUIVisible(viewObj.gameObject, true);
+                return viewObj.GetComponent<TView>().presenter;
             }
             else
             {
-                CreateAndBindView<TView, TPresenter>(presenter, parent);
+                return CreateUI<TView, TPresenter>(type, parent);
             }
+        }
 
-            return presenter;
+        private TPresenter CreateUI<TView, TPresenter>(UIType type, Transform parent)
+        where TPresenter : BaseUIPresenter<TView>, new()
+        where TView : BaseUIView<TPresenter>
+        {
+            if (type == UIType.Item)
+            {
+                // ✅ 1. 手动构建，不走 Scope
+                var presenter = new TPresenter();
+                presenter.UIType = type;
+                presenter.UIParent = parent;
+
+                var view = UIUtility.CreateUI<TView>(parent, config.UIPath);
+                container.Inject(presenter); // 可选：如果你需要注入服务/数据
+
+                view.FindComponents();
+                view.BindPresenter(presenter);
+                view.OnCreate();
+
+                return presenter;
+            }
+            else
+            {
+                // ✅ 原有 Panel/Dialog 逻辑：使用 Scoped Scope + 自动注入
+                var scope = container.CreateScope(builder =>
+                {
+                    builder.Register<TPresenter>(Lifetime.Scoped);
+                });
+
+                var presenter = scope.Resolve<TPresenter>();
+                presenter.Scope = scope;
+                presenter.UIType = type;
+                presenter.UIParent = parent;
+
+                var view = UIUtility.CreateUI<TView>(parent, config.UIPath);
+                scope.InjectGameObject(view.gameObject);
+
+                view.FindComponents();
+                view.BindPresenter(presenter);
+                view.OnCreate();
+
+                return presenter;
+            }
+        }
+
+        public void CloseUI<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
+        where TPresenter : BaseUIPresenter<TView>
+        where TView : BaseUIView<TPresenter>
+        {
+            if (type == UIType.Item)
+            {
+                Debug.LogError($"{type} can not use UIRouter or UIManager close please use BaseUIPresenter Close function");
+                return;
+            }
+            parent ??= GetDefaultParent(type);
+            var view = UIUtility.FindUI<TView>(parent);
+            if (view != null)
+            {
+                //Recycle UI To Pool
+                pool.RecycleUI<TView>(view);
+            }
+            if (type == UIType.Panel)
+            {
+                var lastUI = GetTopChild(parent);
+                if (lastUI != null)
+                {
+                    UIUtility.TriggerLifetime(lastUI, lifetime => { lifetime.OnShow(); });
+                    UIUtility.SetUIVisible(lastUI.gameObject, true);
+                }
+            }
         }
 
         private Transform GetDefaultParent(UIType type)
@@ -227,63 +161,6 @@ namespace LiteFramework.Module.UI
             }
         }
 
-        private TView CreateAndBindView<TView, TPresenter>(TPresenter presenter, Transform parent)
-            where TPresenter : BaseUIPresenter<TView>
-            where TView : BaseUIView<TPresenter>
-        {
-            TView view = UIUtility.CreateUI<TView>(parent, config.UIPath);
-            view.FindComponents();
-            view.BindPresenter(presenter);
-            view.OnCreate();
-            return view;
-        }
-
-
-        public void CloseUI<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
-        where TPresenter : BaseUIPresenter<TView>
-        where TView : BaseUIView<TPresenter>
-        {
-            if (type == UIType.Item)
-            {
-                return;
-            }
-            parent ??= GetDefaultParent(type);
-            var view = UIUtility.FindUI<TView>(parent);
-            if (view != null)
-            {
-                //Recycle UI To Pool
-                pool.RecycleUI<TView>(view);
-            }
-            if (type == UIType.Panel)
-            {
-                var lastUI = GetTopChild(parent);
-                if (lastUI != null)
-                {
-                    IUILifetime[] lifetimes = lastUI.GetComponentsInChildren<IUILifetime>();
-                    for (int i = 0; i < lifetimes.Length; i++)
-                    {
-                        lifetimes[i].OnShow();
-                    }
-                    UIUtility.SetUIVisible(lastUI.gameObject, true);
-                }
-            }
-        }
-
-
-        public TPresenter OpenUIAsync<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
-                   where TPresenter : BaseUIPresenter<TView>
-                   where TView : BaseUIView<TPresenter>
-        {
-            //todo 实现UI的异步加载
-            return default;
-        }
-
-        public void CloseUIAsync<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
-            where TPresenter : BaseUIPresenter<TView>
-            where TView : BaseUIView<TPresenter>
-        {
-            //todo 实现UI的异步销毁
-        }
 
         private Transform GetDialogParent()
         {

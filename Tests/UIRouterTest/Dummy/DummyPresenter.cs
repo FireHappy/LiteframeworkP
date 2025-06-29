@@ -9,7 +9,7 @@ namespace LiteFramework.Tests
     [AutoRegister(VContainer.Lifetime.Transient)]
     public class DummyPresenter : BaseUIPresenter<DummyView>
     {
-
+        public DummyPresenter() { }
         public DummyPresenter(UIRouter uiRouter, IObjectResolver container) : base(uiRouter, container)
         {
 

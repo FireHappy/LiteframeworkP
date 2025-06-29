@@ -15,23 +15,10 @@ namespace LiteFramework.Tests
 
         }
 
-        public void CloseUIAsync<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
-            where TView : BaseUIView<TPresenter>
-            where TPresenter : BaseUIPresenter<TView>
-        {
-
-        }
 
         public TPresenter OpenUI<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
             where TView : BaseUIView<TPresenter>
-            where TPresenter : BaseUIPresenter<TView>
-        {
-            return default;
-        }
-
-        public TPresenter OpenUIAsync<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null, Action success = null, Action<string> failed = null)
-            where TView : BaseUIView<TPresenter>
-            where TPresenter : BaseUIPresenter<TView>
+            where TPresenter : BaseUIPresenter<TView>, new()
         {
             return default;
         }
