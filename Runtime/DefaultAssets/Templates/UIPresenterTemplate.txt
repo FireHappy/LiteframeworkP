@@ -4,14 +4,8 @@ using VContainer;
 
 namespace {NAMESPACE}
 {
-    [AutoRegister(VContainer.Lifetime.Scoped)]
     public class {UI_NAME}Presenter : BaseUIPresenter<{UI_NAME}View>
     {
-
-        public {UI_NAME}Presenter(UIRouter router, IObjectResolver container) : base(router, container)
-        {
-
-        }
 
         public override void OnViewCreate()
         {
@@ -34,7 +28,6 @@ namespace {NAMESPACE}
         }
 
         {INIT}
-
     }
 }
 
