@@ -59,6 +59,12 @@ namespace LiteFramework.Module.UI
             }
             action(uiManager, type, parent);
         }
+        public TPresenter OpenUI<TView, TPresenter>(out bool isFirstCreate, UIType type = UIType.Panel, Transform parent = null)
+        where TPresenter : BaseUIPresenter<TView>, new()
+        where TView : BaseUIView<TPresenter>
+        {
+            return uiManager.OpenUI<TView, TPresenter>(out isFirstCreate, type, parent);
+        }
 
         public TPresenter Open<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
             where TPresenter : BaseUIPresenter<TView>, new()

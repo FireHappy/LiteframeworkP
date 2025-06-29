@@ -29,7 +29,15 @@ namespace LiteFramework.Module.UI
             pool.Init(config.UIKeepAliveTime);
         }
 
+        // 保持原始接口不变（向后兼容）
         public TPresenter OpenUI<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
+            where TPresenter : BaseUIPresenter<TView>, new()
+            where TView : BaseUIView<TPresenter>
+        {
+            return OpenUI<TView, TPresenter>(out _, type, parent);
+        }
+
+        public TPresenter OpenUI<TView, TPresenter>(out bool isFirstCreate, UIType type = UIType.Panel, Transform parent = null)
         where TPresenter : BaseUIPresenter<TView>, new()
         where TView : BaseUIView<TPresenter>
         {
@@ -39,6 +47,7 @@ namespace LiteFramework.Module.UI
             // 2. Item 类型不走缓存或复用，直接创建并绑定
             if (type == UIType.Item)
             {
+                isFirstCreate = true;
                 return CreateUI<TView, TPresenter>(type, parent);
             }
 
@@ -53,6 +62,7 @@ namespace LiteFramework.Module.UI
                 viewObj.SetAsLastSibling();
                 UIUtility.TriggerLifetime(viewObj, lifetime => { lifetime.OnShow(); });
                 UIUtility.SetUIVisible(viewObj.gameObject, true);
+                isFirstCreate = false;
                 return viewObj.GetComponent<TView>().presenter;
             }
             else if (pool.TryGetFromPool<TView>(out viewObj))
@@ -61,10 +71,12 @@ namespace LiteFramework.Module.UI
                 viewObj.localPosition = Vector3.zero;
                 UIUtility.TriggerLifetime(viewObj, lifetime => { lifetime.OnShow(); });
                 UIUtility.SetUIVisible(viewObj.gameObject, true);
+                isFirstCreate = false;
                 return viewObj.GetComponent<TView>().presenter;
             }
             else
             {
+                isFirstCreate = true;
                 return CreateUI<TView, TPresenter>(type, parent);
             }
         }
