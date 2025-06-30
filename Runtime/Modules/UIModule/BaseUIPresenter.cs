@@ -65,7 +65,6 @@ namespace LiteFramework.Module.UI
                     lifetime.OnHide();
                     lifetime.OnDispose();
                 });
-                viewObj.GetComponent<TView>().UnBindPresenter();
                 UIUtility.DestroyUI(viewObj.transform);
                 return;
             }

@@ -31,10 +31,7 @@ namespace LiteFramework.Module.UI
 
         public void UnBindPresenter()
         {
-            presenter.DetachView();
-
-            if (presenter is IDisposable disposable)
-                disposable.Dispose();
+            presenter?.DetachView();
             presenter = default;
         }
 
@@ -48,6 +45,10 @@ namespace LiteFramework.Module.UI
 
         public abstract void OnDispose();
 
+        protected virtual void OnDestroy()
+        {
+            UnBindPresenter();
+        }
     }
 }
 

@@ -60,10 +60,6 @@ namespace LiteFramework.Module.UI
                     {
                         entry.ILifeTimes[i].OnDispose();
                     }
-                    for (int i = 0; i < entry.IViews.Length; i++)
-                    {
-                        entry.IViews[i].UnBindPresenter();
-                    }
                     UIUtility.DestroyUI(entry.View);
                     uiPool.Remove(key);
                 }

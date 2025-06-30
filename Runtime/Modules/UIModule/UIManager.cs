@@ -95,7 +95,7 @@ namespace LiteFramework.Module.UI
             view.FindComponents();
             view.BindPresenter(presenter);
             view.OnCreate();
-
+            UIUtility.TriggerLifetime(view.obj.transform, lifetime => { lifetime.OnShow(); });
             return presenter;
         }
 
