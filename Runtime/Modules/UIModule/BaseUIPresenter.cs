@@ -1,4 +1,3 @@
-using System;
 using LiteFramework.Core.MVP;
 using UnityEngine;
 using VContainer;
@@ -67,7 +66,7 @@ namespace LiteFramework.Module.UI
                     lifetime.OnDispose();
                 });
                 viewObj.GetComponent<TView>().UnBindPresenter();
-                GameObject.Destroy(viewObj);
+                UIUtility.DestroyUI(viewObj.transform);
                 return;
             }
             router.Close<TView>(UIType, UIParent);
