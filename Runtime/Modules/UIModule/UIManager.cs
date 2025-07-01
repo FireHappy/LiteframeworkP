@@ -105,7 +105,7 @@ namespace LiteFramework.Module.UI
         {
             if (type == UIType.Item)
             {
-                Debug.LogError($"{type} can not use UIRouter or UIManager close please use BaseUIPresenter Close function");
+                Debug.LogError($"{type} can not use UIRouter or UIManager close please use BaseUIPresenter Close function or use GameObject.Destroy function");
                 return;
             }
             parent ??= GetDefaultParent(type);
