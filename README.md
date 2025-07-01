@@ -136,10 +136,15 @@ public class Main : LiteStartupBase
    - UI被回收到UI池中的保活时间
    - UIRoot 预制体 
 
-3. 将 UIRootConfig 拖拽到 Main 脚本的 UIRootConfig 属性上  
-   ![alt text](image-2.png)
 
 ---
+
+## 🪛 第八步：配置 UIModuleInstaller
+
+1. 在 Unity 中右键创建配置文件：  
+   `Create > LiteFramework>Module > UIModuleInstaller`
+2. 拖拽moduleInstaller到Main脚本上
+![alt text](image-1.png)
 
 ## 📌 常见问题排查
 

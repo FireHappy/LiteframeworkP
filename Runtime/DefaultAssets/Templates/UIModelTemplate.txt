@@ -1,0 +1,10 @@
+using LiteFramework.Core.MVP;
+
+namespace {NAMESPACE}
+{
+    public class {UI_NAME}Model : IModel
+    {
+        
+    }
+}
+

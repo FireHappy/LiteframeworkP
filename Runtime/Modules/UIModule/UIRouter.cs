@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using LiteFramework.Core.MVP;
+using UnityEditor;
 
 namespace LiteFramework.Module.UI
 {
@@ -21,14 +22,14 @@ namespace LiteFramework.Module.UI
 
 
         public static void Register<TPresenter, TView>()
-            where TPresenter : BaseUIPresenter<TView>
+            where TPresenter : BaseUIPresenter<TView>, new()
             where TView : BaseUIView<TPresenter>
         {
             // 使用强类型委托避免反射,使用泛型的特点，避免字典查找
             ViewCache<TView>.OpenAction = (IUIManager mgr, UIType type, Transform parent) =>
-                mgr.OpenUI<TPresenter, TView>(type, parent);
+                mgr.OpenUI<TView, TPresenter>(type, parent);
             ViewCache<TView>.CloseAction = (IUIManager mgr, UIType type, Transform parent) =>
-                mgr.CloseUI<TPresenter, TView>(type, parent);
+                mgr.CloseUI<TView, TPresenter>(type, parent);
         }
 
         public void Open<TView>(UIType type = UIType.Panel, Transform parent = null)
@@ -58,19 +59,26 @@ namespace LiteFramework.Module.UI
             }
             action(uiManager, type, parent);
         }
+        public TPresenter Open<TView, TPresenter>(out bool isFirstCreate, UIType type = UIType.Panel, Transform parent = null)
+        where TPresenter : BaseUIPresenter<TView>, new()
+        where TView : BaseUIView<TPresenter>
+        {
+            return uiManager.OpenUI<TView, TPresenter>(out isFirstCreate, type, parent);
+        }
 
-        public TPresenter Open<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null)
+        public TPresenter Open<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
+            where TPresenter : BaseUIPresenter<TView>, new()
+            where TView : BaseUIView<TPresenter>
+        {
+            return uiManager.OpenUI<TView, TPresenter>(type, parent);
+        }
+
+        public void Close<TView, TPresenter>(UIType type = UIType.Panel, Transform parent = null)
             where TPresenter : BaseUIPresenter<TView>
             where TView : BaseUIView<TPresenter>
         {
-            return uiManager.OpenUI<TPresenter, TView>(type, parent);
+            uiManager.CloseUI<TView, TPresenter>(type, parent);
         }
 
-        public void Close<TPresenter, TView>(UIType type = UIType.Panel, Transform parent = null)
-            where TPresenter : BaseUIPresenter<TView>
-            where TView : BaseUIView<TPresenter>
-        {
-            uiManager.CloseUI<TPresenter, TView>(type, parent);
-        }
     }
 }

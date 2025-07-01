@@ -32,9 +32,8 @@ namespace LiteFramework.EditorTools
                 return;
             }
 
-            GenerateCodeFiles(go, uiName, config);
+            GenerateCodeFiles(go, uiName, config, false);
 
-            // 延迟生成路由，避免编译期间类型未加载
             EditorPrefs.SetBool("LiteFramework.PendingRouterGeneration", true);
             EditorPrefs.SetString("LiteFramework.RouterOutputPath", config.outputRootPath);
 
@@ -43,28 +42,67 @@ namespace LiteFramework.EditorTools
             EditorUtility.DisplayDialog("Generate success!", $"Generate {uiName} MVP code success.\nRouter will be generated after domain reload.", "Sure");
         }
 
-        private static void GenerateCodeFiles(GameObject go, string uiName, UIGeneratorConfig config)
+        [MenuItem("Assets/Generate UI MVP Template With Model")]
+        private static void GenerateUIMVPWithModel()
+        {
+            var go = Selection.activeObject as GameObject;
+            string uiName = go.name.Replace("View", "");
+
+            var config = LoadUIGeneratorConfig();
+            if (config == null)
+            {
+                Debug.LogError("Can't Find UIGeneratorConfig");
+                return;
+            }
+
+            GenerateCodeFiles(go, uiName, config, true);
+
+            EditorPrefs.SetBool("LiteFramework.PendingRouterGeneration", true);
+            EditorPrefs.SetString("LiteFramework.RouterOutputPath", config.outputRootPath);
+
+            AssetDatabase.Refresh();
+
+            EditorUtility.DisplayDialog("Generate success!", $"Generate {uiName} MVP code success.\nRouter will be generated after domain reload.", "Sure");
+        }
+
+        private static void GenerateCodeFiles(GameObject go, string uiName, UIGeneratorConfig config, bool generateModel)
         {
             string viewTemplate = File.ReadAllText("Packages/com.liteframework.unity/Runtime/DefaultAssets/Templates/UIViewTemplate.txt");
             string viewAutoTemplate = File.ReadAllText("Packages/com.liteframework.unity/Runtime/DefaultAssets/Templates/UIViewAutoTemplate.txt");
             string presenterTemplate = File.ReadAllText("Packages/com.liteframework.unity/Runtime/DefaultAssets/Templates/UIPresenterTemplate.txt");
 
-            var (fields, fieldsFind) = GenerateComponentFields(go.transform, config);
+            var (fields, fieldsFind, usings) = GenerateComponentFields(go.transform, config);
             var nameSpace = config.nameSpace;
+
+            string usingCode = string.Join("\n", usings
+                .Where(ns => !string.IsNullOrEmpty(ns))
+                .Distinct()
+                .Select(ns => $"using {ns};"));
 
             string viewCode = viewTemplate
                 .Replace("{UI_NAME}", uiName)
                 .Replace("{NAMESPACE}", nameSpace);
 
             string viewAutoCode = viewAutoTemplate
+                .Replace("{USINGS}", usingCode)
                 .Replace("{UI_NAME}", uiName)
-                .Replace("{Fields}", fields)
-                .Replace("{FieldsFind}", fieldsFind)
+                .Replace("{FIELDS}", fields)
+                .Replace("{FIELDS_FIND}", fieldsFind)
                 .Replace("{NAMESPACE}", nameSpace);
 
             string presenterCode = presenterTemplate
                 .Replace("{UI_NAME}", uiName)
                 .Replace("{NAMESPACE}", nameSpace);
+
+            if (generateModel)
+            {
+                string content = $"public void Init({uiName}Model model)\n\t\t{{\n\t\t}}";
+                presenterCode = presenterCode.Replace("{INIT}", content);
+            }
+            else
+            {
+                presenterCode = presenterCode.Replace("{INIT}", "");
+            }
 
             string outputDir = Path.Combine(config.outputRootPath, uiName);
             Directory.CreateDirectory(outputDir);
@@ -82,13 +120,28 @@ namespace LiteFramework.EditorTools
             {
                 File.WriteAllText(presenterFile, presenterCode);
             }
+
+            if (generateModel)
+            {
+                string modelTemplate = File.ReadAllText("Packages/com.liteframework.unity/Runtime/DefaultAssets/Templates/UIModelTemplate.txt");
+                string modelCode = modelTemplate
+                    .Replace("{UI_NAME}", uiName)
+                    .Replace("{NAMESPACE}", nameSpace);
+
+                var modelFile = Path.Combine(outputDir, $"{uiName}Model.cs");
+                if (!File.Exists(modelFile))
+                {
+                    File.WriteAllText(modelFile, modelCode);
+                }
+            }
         }
 
-        private static (string, string) GenerateComponentFields(Transform root, UIGeneratorConfig config)
+        private static (string fields, string fieldsFind, HashSet<string> usings) GenerateComponentFields(Transform root, UIGeneratorConfig config)
         {
             StringBuilder fields = new StringBuilder();
             StringBuilder fieldsFind = new StringBuilder();
             HashSet<string> usedNames = new HashSet<string>();
+            HashSet<string> usings = new HashSet<string>();
 
             Stack<Transform> stack = new Stack<Transform>();
             stack.Push(root);
@@ -120,9 +173,11 @@ namespace LiteFramework.EditorTools
                                     usedNames.Add(varName);
 
                                     string camelCaseName = char.ToLower(prefix[0]) + prefix.Substring(1) + fieldName;
-
                                     fields.AppendLine($"\t\tpublic {type.Name} {camelCaseName};");
                                     fieldsFind.AppendLine($"\t\t\t{camelCaseName} = transform.Find(\"{GetFindPath(root, current)}\").GetComponent<{type.Name}>();");
+
+                                    if (!string.IsNullOrEmpty(type.Namespace))
+                                        usings.Add(type.Namespace);
                                 }
                             }
                         }
@@ -135,7 +190,7 @@ namespace LiteFramework.EditorTools
                 }
             }
 
-            return (fields.ToString(), fieldsFind.ToString());
+            return (fields.ToString(), fieldsFind.ToString(), usings);
         }
 
         private static string GetFindPath(Transform root, Transform child)
@@ -177,7 +232,6 @@ namespace LiteFramework.EditorTools
     }
 }
 
-
 [InitializeOnLoad]
 public static class UIRouterGenerationTrigger
 {
@@ -195,6 +249,7 @@ public static class UIRouterGenerationTrigger
 
         string outputPath = EditorPrefs.GetString("LiteFramework.RouterOutputPath", null);
         EditorPrefs.DeleteKey("LiteFramework.RouterOutputPath");
+
         var config = UIPrefabCodeGenerator.LoadUIGeneratorConfig();
         if (!string.IsNullOrEmpty(outputPath))
         {
@@ -207,7 +262,7 @@ public static class UIRouterGenerationTrigger
 
                 Debug.Log("✅ 成功生成 UIRouter 映射表！");
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 Debug.LogError($"❌ 延迟生成 UIRouter 失败：{e}");
             }

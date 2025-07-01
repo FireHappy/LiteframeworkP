@@ -8,16 +8,16 @@ namespace LiteFramework.Module.UI
 {
     public class UIPoolEntry
     {
-        public IView IView;
-        public IUILifetime ILifeTime;
+        public IView[] IViews;
+        public IUILifetime[] ILifeTimes;
         public Transform View;
         public float LastHideTime;
 
         public UIPoolEntry(Transform view)
         {
             View = view;
-            IView = view.GetComponent<IView>();
-            ILifeTime = view.GetComponent<IUILifetime>();
+            IViews = view.GetComponentsInChildren<IView>();
+            ILifeTimes = view.GetComponentsInChildren<IUILifetime>();
             LastHideTime = Time.unscaledTime;
         }
     }
@@ -56,8 +56,10 @@ namespace LiteFramework.Module.UI
                 Type key = removeQueue.Dequeue();
                 if (uiPool.TryGetValue(key, out UIPoolEntry entry))
                 {
-                    entry.IView.UnBindPresenter();
-                    entry.ILifeTime.OnDispose();
+                    for (int i = 0; i < entry.ILifeTimes.Length; i++)
+                    {
+                        entry.ILifeTimes[i].OnDispose();
+                    }
                     UIUtility.DestroyUI(entry.View);
                     uiPool.Remove(key);
                 }
@@ -69,7 +71,10 @@ namespace LiteFramework.Module.UI
         {
             view.transform.SetParent(poolRoot);
             UIPoolEntry entry = new UIPoolEntry(view);
-            entry.ILifeTime.OnHide();
+            for (int i = 0; i < entry.ILifeTimes.Length; i++)
+            {
+                entry.ILifeTimes[i].OnHide();
+            }
             uiPool.Add(typeof(TView), entry);
         }
 

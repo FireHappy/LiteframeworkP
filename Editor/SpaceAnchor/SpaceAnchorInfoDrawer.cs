@@ -1,4 +1,3 @@
-
 namespace LiteFramework.Module.Editor
 {
 #if UNITY_EDITOR
@@ -42,24 +41,24 @@ namespace LiteFramework.Module.Editor
             {
                 anchorNameProp.stringValue = prefab.name;
             }
+
             if (prefab != null)
             {
                 if (childTransforms.Count == 0)
                 {
                     LoadChildTransforms(prefab.transform);
+                    if (!foldoutStates.ContainsKey(prefab.transform))
+                        foldoutStates[prefab.transform] = true;
                 }
 
-                // 绘制树形结构，从 prefab.transform 根开始
                 EditorGUI.LabelField(rect, "Select UIContainer:");
                 rect.y += lineHeight;
 
                 rect.height = lineHeight;
                 DrawTransformTree(prefab.transform, prefab.transform, ref rect, pathProp, prefab.transform);
 
-                // 显示当前选中路径
                 rect.y += 2;
                 EditorGUI.LabelField(rect, "Selected Path:", pathProp.stringValue);
-                rect.y += lineHeight;
             }
             else
             {
@@ -68,7 +67,6 @@ namespace LiteFramework.Module.Editor
                 foldoutStates.Clear();
             }
         }
-
 
         private void DrawTransformTree(Transform current, Transform root, ref Rect rect, SerializedProperty pathProp, Transform prefabRoot, int indentLevel = 0)
         {
@@ -82,7 +80,6 @@ namespace LiteFramework.Module.Editor
             Rect foldoutRect = new Rect(rect.x + indentLevel * 15, rect.y, 15, EditorGUIUtility.singleLineHeight);
             Rect labelRect = new Rect(foldoutRect.xMax, rect.y, rect.width - indentLevel * 15 - 15, EditorGUIUtility.singleLineHeight);
 
-            // 绘制折叠箭头（只响应点击切换展开状态）
             if (hasChildren)
             {
                 if (GUI.Button(foldoutRect, foldoutStates[current] ? "▼" : "▶", EditorStyles.label))
@@ -91,13 +88,11 @@ namespace LiteFramework.Module.Editor
                 }
             }
 
-            // 高亮选中项背景
             if (selectedTransform == current)
             {
                 EditorGUI.DrawRect(new Rect(labelRect.x, labelRect.y, labelRect.width, labelRect.height), new Color(0.24f, 0.48f, 0.90f, 0.3f));
             }
 
-            // 显示名称（整行区域响应点击选中）
             EditorGUI.LabelField(labelRect, current.name);
 
             if (Event.current.type == EventType.MouseDown && labelRect.Contains(Event.current.mousePosition))
@@ -118,13 +113,13 @@ namespace LiteFramework.Module.Editor
             }
         }
 
-
         private void LoadChildTransforms(Transform root)
         {
             childTransforms.Clear();
             foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
             {
-                if (t != root) childTransforms.Add(t);
+                if (t != root)
+                    childTransforms.Add(t);
             }
         }
 
@@ -142,10 +137,43 @@ namespace LiteFramework.Module.Editor
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            // 预留足够高度给树形结构绘制（可根据需求调整）
-            return (EditorGUIUtility.singleLineHeight + 2) * 12;
+            float lineHeight = EditorGUIUtility.singleLineHeight + 2;
+            float height = lineHeight * 6;
+
+            var prefabProp = property.FindPropertyRelative("Prefab");
+            GameObject prefab = prefabProp.objectReferenceValue as GameObject;
+
+            if (prefab != null)
+            {
+                if (childTransforms.Count == 0)
+                {
+                    LoadChildTransforms(prefab.transform);
+                    if (!foldoutStates.ContainsKey(prefab.transform))
+                        foldoutStates[prefab.transform] = true;
+                }
+
+                height += CalculateTreeHeight(prefab.transform, 0);
+                height += lineHeight * 2; // Label + selected path
+            }
+
+            return height;
+        }
+
+        private float CalculateTreeHeight(Transform current, int indentLevel)
+        {
+            float lineHeight = EditorGUIUtility.singleLineHeight + 2;
+            float totalHeight = lineHeight;
+
+            if (foldoutStates.TryGetValue(current, out bool expanded) && expanded)
+            {
+                foreach (Transform child in current)
+                {
+                    totalHeight += CalculateTreeHeight(child, indentLevel + 1);
+                }
+            }
+
+            return totalHeight;
         }
     }
 #endif
-
 }

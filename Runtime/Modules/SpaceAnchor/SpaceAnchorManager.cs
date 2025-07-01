@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace LiteFramework.Module
 {
+
     public class SpaceAnchorManager
     {
         private Dictionary<string, GameObject> anchorCache = new Dictionary<string, GameObject>();
@@ -14,32 +15,33 @@ namespace LiteFramework.Module
             this.config = config;
         }
 
-        public (SpaceAnchorInfo, GameObject) CreateAnchor(string anchorId, Transform parent = null, Pose? pose = null)
+
+        public SpaceAnchor CreateAnchor(string anchorId, Transform parent = null, Pose? pose = null)
         {
-            var anchor = config.GetAnchorInfo(anchorId);
+            var info = config.GetAnchorInfo(anchorId);
             if (!anchorCache.TryGetValue(anchorId, out GameObject anchorObj))
             {
-                if (anchor != null)
+                if (info != null)
                 {
-                    anchorObj = GameObject.Instantiate(anchor.Prefab);
+                    anchorObj = GameObject.Instantiate(info.Prefab);
                     if (anchorObj != null)
                     {
                         anchorObj.transform.SetParent(parent);
                         if (pose != null)
                         {
-                            Pose ps = (Pose)pose;
+                            var ps = pose.Value;
                             anchorObj.transform.SetLocalPositionAndRotation(ps.position, ps.rotation);
                         }
                         else
                         {
-                            anchorObj.transform.SetLocalPositionAndRotation(anchor.DefaultPosition, Quaternion.Euler(anchor.DefaultEulerAngle));
+                            anchorObj.transform.SetLocalPositionAndRotation(info.DefaultPosition, Quaternion.Euler(info.DefaultEulerAngle));
                         }
                         anchorCache.Add(anchorId, anchorObj);
                         anchorObj.GetComponent<IAnchorCreate>()?.OnAnchorCreate();
                     }
                 }
             }
-            return (anchor, anchorObj);
+            return new SpaceAnchor(anchorId, info, anchorObj);
         }
 
 

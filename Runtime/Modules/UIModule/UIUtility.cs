@@ -59,6 +59,15 @@ namespace LiteFramework.Module.UI
             cg.interactable = visible;
             cg.blocksRaycasts = visible;
         }
+
+        public static void TriggerLifetime(Transform view, Action<IUILifetime> action)
+        {
+            var lifetimes = view.GetComponentsInChildren<IUILifetime>();
+            for (int i = 0; i < lifetimes.Length; i++)
+            {
+                action(lifetimes[i]);
+            }
+        }
     }
 }
 

@@ -1,3 +1,4 @@
+using System;
 using LiteFramework.Core.MVP;
 using UnityEngine;
 
@@ -7,6 +8,8 @@ namespace LiteFramework.Module.UI
     where TPresenter : class, IPresenter
     {
         public TPresenter presenter { get; private set; }
+
+        public GameObject obj => gameObject;
 
         public void BindPresenter(IPresenter presenter)
         {
@@ -28,7 +31,7 @@ namespace LiteFramework.Module.UI
 
         public void UnBindPresenter()
         {
-            presenter.DetachView();
+            presenter?.DetachView();
             presenter = default;
         }
 
@@ -41,6 +44,11 @@ namespace LiteFramework.Module.UI
         public abstract void OnHide();
 
         public abstract void OnDispose();
+
+        protected virtual void OnDestroy()
+        {
+            UnBindPresenter();
+        }
     }
 }
 

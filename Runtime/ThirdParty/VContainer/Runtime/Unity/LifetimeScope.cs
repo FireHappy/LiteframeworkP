@@ -223,7 +223,10 @@ namespace VContainer.Unity
         {
             Container = container;
             AutoInjectAll();
+            OnSetContainer(container);
         }
+
+        protected virtual void OnSetContainer(IObjectResolver container) { }
 
         public TScope CreateChild<TScope>(IInstaller installer = null, string childScopeName = null)
             where TScope : LifetimeScope

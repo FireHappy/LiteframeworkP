@@ -7,6 +7,8 @@ namespace LiteFramework.Core.MVP
     {
         public TPresenter presenter { get; private set; }
 
+        public GameObject obj => gameObject;
+
         public void BindPresenter(IPresenter presenter)
         {
             if (this.presenter != null)

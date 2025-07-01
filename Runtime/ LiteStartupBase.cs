@@ -1,90 +1,71 @@
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
-using LiteFramework.Module.UI;
-using LiteFramework.Core.MVP;
-using LiteFramework.Module;
-using System.Linq;
-using System.Reflection;
 using LiteFramework.Core.Utility;
+using LiteFramework.Module;
 
 namespace LiteFramework
 {
     /// <summary>
-    /// 程序启动基类，封装 UI 初始化与自动注册逻辑
+    /// 纯净版程序启动基类，只处理模块注册和全局容器
     /// </summary>
     public abstract class LiteStartupBase : LifetimeScope
     {
         [SerializeField]
-        protected ScriptableObject UIConfig;
+        protected BaseModuleInstaller[] ModuleInstallers;
 
         protected override void Configure(IContainerBuilder builder)
         {
-            RegisterUIModule(builder);
+            RegisterAllConfiguredModules(builder);
             RegisterAllAutoRegister(builder);
             OnRegisterCustomServices(builder);
         }
 
-        /// <summary>
-        /// 注册 UI 管理模块（UIRootConfig / IUIManager / UIRouter）
-        /// </summary>
-        private void RegisterUIModule(IContainerBuilder builder)
+        protected override void OnSetContainer(IObjectResolver container)
         {
-            if (UIConfig != null)
+            base.OnSetContainer(container);
+            GlobalContainer.SetContainer(container);
+        }
+
+        /// <summary>
+        /// 注册所有 ScriptableObject 实现的模块安装器
+        /// </summary>
+        private void RegisterAllConfiguredModules(IContainerBuilder builder)
+        {
+            if (ModuleInstallers == null) return;
+
+            foreach (var installerSO in ModuleInstallers)
             {
-                builder.RegisterInstance(UIConfig).As<UIConfig>();
-                builder.RegisterEntryPoint<UIPoolManager>(Lifetime.Singleton).AsSelf();
-                builder.Register<IUIManager, UIManager>(Lifetime.Singleton);
-                builder.Register<UIRouter>(Lifetime.Singleton);
+                if (installerSO is IModuleInstaller installer)
+                {
+                    installer.Install(builder);
+                }
+                else
+                {
+                    Debug.LogError($"模块Installer配置 {installerSO.name} 未实现 IModuleInstaller 接口");
+                }
             }
         }
 
         /// <summary>
-        /// 自动注册所有带有特性标记的类
+        /// 自动注册带注册
         /// </summary>
         private void RegisterAllAutoRegister(IContainerBuilder builder)
         {
-            var assemblies = GetAutoRegisterAssemblies();
-            VContainerAutoRegister.RegisterWithAttribute(builder, assemblies);
+            VContainerAutoRegister.Register(builder);
         }
 
-        /// <summary>
-        /// 自动注册所需程序集 = 默认程序集 + 子类指定程序集
-        /// </summary>
-        protected virtual Assembly[] GetAutoRegisterAssemblies()
-        {
-            var baseAssembly = typeof(BasePresenter<>).Assembly;
-            var custom = GetCustomAutoRegisterAssemblies();
-            return custom != null
-                ? new[] { baseAssembly }.Concat(custom).ToArray()
-                : new[] { baseAssembly };
-        }
 
         /// <summary>
-        /// 子类可重写此方法添加自动注册程序集
+        /// 可选自定义服务注册
         /// </summary>
-        protected virtual Assembly[] GetCustomAutoRegisterAssemblies()
-        {
-            {
-                return new Assembly[] {
-                    Assembly.Load("Assembly-CSharp")
-                };
-            }
-        }
-
-        /// <summary>
-        /// 子类可额外注册自定义服务
-        /// </summary>
-        protected abstract void OnRegisterCustomServices(IContainerBuilder builder);
+        protected virtual void OnRegisterCustomServices(IContainerBuilder builder) { }
 
         protected virtual void Start()
         {
             OnStart();
         }
 
-        /// <summary>
-        /// 子类实现此方法指定启动 UI 界面等逻辑
-        /// </summary>
         protected abstract void OnStart();
     }
 }
