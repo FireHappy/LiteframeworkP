@@ -5,7 +5,6 @@
     "description": "A lite mvp framework",
     "unity": "2020.3",
     "author": {
-        "name": "chenlin",
-        "email": ""
+        "name": "rokid"
     }
 }
