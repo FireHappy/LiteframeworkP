@@ -49,6 +49,7 @@ namespace LiteFramework.Module.UI
         public void DetachView()
         {
             view = default;
+            viewObj = null;
         }
 
         public virtual void OnViewCreate() { }
